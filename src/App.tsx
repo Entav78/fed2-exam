@@ -1,6 +1,7 @@
 // src/App.tsx
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import HomePage from '@/pages/HomePage';
 
 export default function App() {
   return (
@@ -17,17 +18,7 @@ export default function App() {
       <Header />
 
       <main id="main" className="container py-6">
-        <h1 className="text-3xl font-bold">Holidaze</h1>
-        <p className="mt-2 text-text-muted">
-          Starter layout is live. Tokens loaded. Ready to wire pages.
-        </p>
-
-        {/* Temp color check (keep or remove) */}
-        <div className="mt-6 space-y-1">
-          <h2 className="text-brand font-semibold">Brand color</h2>
-          <p className="text-success">Success</p>
-          <p className="text-danger">Danger</p>
-        </div>
+        <HomePage />
       </main>
 
       <Footer />

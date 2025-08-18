@@ -5,6 +5,7 @@
 
 export const API_BASE =
   import.meta.env.VITE_API_BASE_URL ?? 'https://v2.api.noroff.dev';
+console.log('API_BASE =', import.meta.env.VITE_API_BASE_URL);
 
 // Roots
 export const API_AUTH = `${API_BASE}/auth`;
@@ -68,10 +69,39 @@ export function getVenueByIdUrl(
   return suffix ? `${API_VENUES}/${id}?${suffix}` : `${API_VENUES}/${id}`;
 }
 
-/** -------- Bookings -------- */
+// --- Bookings URL builders ---
 
-export const listBookingsUrl = () => API_BOOKINGS;
-export const getBookingByIdUrl = (id: string) => `${API_BOOKINGS}/${id}`;
+/** All bookings, optional expansions + paging/sorting */
+export function listBookingsUrl(params?: {
+  page?: number;
+  limit?: number;
+  sort?: 'dateFrom' | 'dateTo' | 'created' | 'updated' | 'guests';
+  sortOrder?: 'asc' | 'desc';
+  venue?: boolean; // _venue=true (include venue object)
+  customer?: boolean; // _customer=true (include customer object)
+}) {
+  const qs = new URLSearchParams();
+  if (params?.page != null) qs.set('page', String(params.page));
+  if (params?.limit != null) qs.set('limit', String(params.limit));
+  if (params?.sort) qs.set('sort', params.sort);
+  if (params?.sortOrder) qs.set('sortOrder', params.sortOrder);
+  if (params?.venue) qs.set('_venue', 'true');
+  if (params?.customer) qs.set('_customer', 'true');
+  const suffix = qs.toString();
+  return suffix ? `${API_BOOKINGS}?${suffix}` : API_BOOKINGS;
+}
+
+/** Single booking by id, with optional expansions */
+export function getBookingByIdUrl(
+  id: string,
+  opts?: { venue?: boolean; customer?: boolean }
+) {
+  const qs = new URLSearchParams();
+  if (opts?.venue) qs.set('_venue', 'true');
+  if (opts?.customer) qs.set('_customer', 'true');
+  const suffix = qs.toString();
+  return suffix ? `${API_BOOKINGS}/${id}?${suffix}` : `${API_BOOKINGS}/${id}`;
+}
 
 /** -------- Profiles (by name) -------- */
 
