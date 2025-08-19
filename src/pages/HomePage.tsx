@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fetchVenues, isVenueAvailable, type Venue } from '@/lib/api/venues';
-import VenueCard from '@/components/venues/VenueCard';
+
 import Pagination from '@/components/ui/Pagination';
+import VenueCard from '@/components/venues/VenueCard';
+import { fetchVenues, isVenueAvailable, type Venue } from '@/lib/api/venues';
 
 function addDays(date: Date, n: number) {
   const d = new Date(date);
@@ -130,11 +131,7 @@ export default function HomePage() {
         ))}
       </ul>
 
-      <Pagination
-        totalPages={totalPages}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-      />
+      <Pagination totalPages={totalPages} currentPage={currentPage} onPageChange={setCurrentPage} />
     </div>
   );
 }

@@ -4,18 +4,14 @@ type Props = {
   onPageChange: (page: number) => void;
 };
 
-export default function Pagination({
-  currentPage,
-  totalPages,
-  onPageChange,
-}: Props) {
+export default function Pagination({ currentPage, totalPages, onPageChange }: Props) {
   if (totalPages <= 1) return null;
 
   const go = (p: number) => onPageChange(Math.min(Math.max(1, p), totalPages));
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1).slice(
     Math.max(0, currentPage - 3),
-    Math.max(0, currentPage - 3) + 5
+    Math.max(0, currentPage - 3) + 5,
   );
 
   return (

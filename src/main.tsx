@@ -1,13 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import App from './App';
-import './index.css';
 
 import HomePage from '@/pages/HomePage';
-import VenueDetailPage from '@/pages/VenueDetailPage';
-import RootError from '@/pages/RootError';
 import NotFoundPage from '@/pages/NotFoundPage';
+import RootError from '@/pages/RootError';
+import VenueDetailPage from '@/pages/VenueDetailPage';
+
+import App from './App';
+
+import 'leaflet/dist/leaflet.css';
+import './index.css';
 
 const router = createBrowserRouter([
   {
@@ -24,5 +27,5 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <RouterProvider router={router} />
-  </React.StrictMode>
+  </React.StrictMode>,
 );

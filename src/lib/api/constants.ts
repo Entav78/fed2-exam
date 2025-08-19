@@ -3,8 +3,7 @@
  * Works with Noroff v2 API and Vite env vars.
  */
 
-export const API_BASE =
-  import.meta.env.VITE_API_BASE_URL ?? 'https://v2.api.noroff.dev';
+export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'https://v2.api.noroff.dev';
 console.log('API_BASE =', import.meta.env.VITE_API_BASE_URL);
 
 // Roots
@@ -58,10 +57,7 @@ export function listVenuesUrl(params?: {
 }
 
 /** Single venue by id (optionally expand owner/bookings) */
-export function getVenueByIdUrl(
-  id: string,
-  opts?: { owner?: boolean; bookings?: boolean }
-) {
+export function getVenueByIdUrl(id: string, opts?: { owner?: boolean; bookings?: boolean }) {
   const qs = new URLSearchParams();
   if (opts?.owner) qs.set('_owner', 'true');
   if (opts?.bookings) qs.set('_bookings', 'true');
@@ -92,10 +88,7 @@ export function listBookingsUrl(params?: {
 }
 
 /** Single booking by id, with optional expansions */
-export function getBookingByIdUrl(
-  id: string,
-  opts?: { venue?: boolean; customer?: boolean }
-) {
+export function getBookingByIdUrl(id: string, opts?: { venue?: boolean; customer?: boolean }) {
   const qs = new URLSearchParams();
   if (opts?.venue) qs.set('_venue', 'true');
   if (opts?.customer) qs.set('_customer', 'true');
@@ -105,14 +98,11 @@ export function getBookingByIdUrl(
 
 /** -------- Profiles (by name) -------- */
 
-export const getProfileUrl = (name: string) =>
-  `${API_PROFILES}/${encodeURIComponent(name)}`;
+export const getProfileUrl = (name: string) => `${API_PROFILES}/${encodeURIComponent(name)}`;
 
-export const getProfileVenuesUrl = (name: string) =>
-  `${getProfileUrl(name)}/venues`;
+export const getProfileVenuesUrl = (name: string) => `${getProfileUrl(name)}/venues`;
 
-export const getProfileBookingsUrl = (name: string) =>
-  `${getProfileUrl(name)}/bookings`;
+export const getProfileBookingsUrl = (name: string) => `${getProfileUrl(name)}/bookings`;
 
 /** -------- Auth -------- */
 

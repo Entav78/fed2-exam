@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fetchBookings, type Booking } from '@/lib/api/bookings';
+
+import { type Booking, fetchBookings } from '@/lib/api/bookings';
 
 export default function BookingsTest() {
   const [rows, setRows] = useState<Booking[]>([]);
@@ -29,18 +30,13 @@ export default function BookingsTest() {
   return (
     <ul className="space-y-2">
       {rows.map((b) => (
-        <li
-          key={b.id}
-          className="p-3 rounded border border-border-light bg-white"
-        >
+        <li key={b.id} className="p-3 rounded border border-border-light bg-white">
           <div>
             <strong>{b.venue?.name ?? 'Unknown venue'}</strong> —{' '}
-            {new Date(b.dateFrom).toLocaleDateString()} →{' '}
-            {new Date(b.dateTo).toLocaleDateString()} — guests: {b.guests}
+            {new Date(b.dateFrom).toLocaleDateString()} → {new Date(b.dateTo).toLocaleDateString()}{' '}
+            — guests: {b.guests}
           </div>
-          <div className="text-sm text-muted">
-            Customer: {b.customer?.name ?? 'n/a'}
-          </div>
+          <div className="text-sm text-muted">Customer: {b.customer?.name ?? 'n/a'}</div>
         </li>
       ))}
     </ul>

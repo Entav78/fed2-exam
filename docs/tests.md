@@ -8,25 +8,25 @@ This document contains manual testing notes and automated validation results for
 
 ### All Users
 
-- [ ] View a list of Venues — *tested on [date]*
-- [ ] Search for a specific Venue — *tested on [date]*
-- [ ] View a Venue page by ID — *tested on [date]*
-- [ ] Register as Customer/Venue Manager — *tested on [date]*
-- [ ] View a calendar with available and booked dates — *tested on [date]*
+- [ ] View a list of Venues — _tested on [date]_
+- [ ] Search for a specific Venue — _tested on [date]_
+- [ ] View a Venue page by ID — _tested on [date]_
+- [ ] Register as Customer/Venue Manager — _tested on [date]_
+- [ ] View a calendar with available and booked dates — _tested on [date]_
 
 ### Customers
 
-- [ ] Login and logout — *tested on [date]*
-- [ ] Create a booking — *tested on [date]*
-- [ ] View upcoming bookings — *tested on [date]*
-- [ ] Update avatar/profile picture — *tested on [date]*
+- [ ] Login and logout — _tested on [date]_
+- [ ] Create a booking — _tested on [date]_
+- [ ] View upcoming bookings — _tested on [date]_
+- [ ] Update avatar/profile picture — _tested on [date]_
 
 ### Venue Managers
 
-- [ ] Login and logout — *tested on [date]*
-- [ ] Create, edit, and delete a Venue — *tested on [date]*
-- [ ] View upcoming bookings for their venues — *tested on [date]*
-- [ ] Update avatar/profile picture — *tested on [date]*
+- [ ] Login and logout — _tested on [date]_
+- [ ] Create, edit, and delete a Venue — _tested on [date]_
+- [ ] View upcoming bookings for their venues — _tested on [date]_
+- [ ] Update avatar/profile picture — _tested on [date]_
 
 ---
 
@@ -44,7 +44,7 @@ This document contains manual testing notes and automated validation results for
 ## 📊 Lighthouse Reports
 
 **Tool:** Chrome DevTools → Lighthouse  
-**Date tested:** [date]  
+**Date tested:** [date]
 
 ### Desktop
 

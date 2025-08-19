@@ -1,4 +1,4 @@
-import { buildHeaders, listBookingsUrl, getBookingByIdUrl } from './constants';
+import { buildHeaders, getBookingByIdUrl, listBookingsUrl } from './constants';
 
 // --- Shared subtypes (aligns with your schema) ---
 
@@ -100,7 +100,7 @@ export async function fetchBookings(params?: {
 /** Get a single booking by id (optionally include venue/customer) */
 export async function getBookingById(
   id: string,
-  opts?: { venue?: boolean; customer?: boolean }
+  opts?: { venue?: boolean; customer?: boolean },
 ): Promise<Booking> {
   const url = getBookingByIdUrl(id, opts);
   const json = await getJSON<{ data: Booking }>(url);

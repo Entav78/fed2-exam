@@ -1,6 +1,24 @@
-import { buildHeaders, listVenuesUrl, getVenueByIdUrl } from './constants';
+import { buildHeaders, getVenueByIdUrl, listVenuesUrl } from './constants';
 
+// if not already present:
 export type Media = { url: string; alt?: string };
+
+export type VenueLocation = {
+  address?: string;
+  city?: string;
+  zip?: string;
+  country?: string;
+  continent?: string;
+  lat?: number;
+  lng?: number;
+};
+
+export type VenueMeta = {
+  wifi?: boolean;
+  parking?: boolean;
+  breakfast?: boolean;
+  pets?: boolean;
+};
 
 export type BookingLite = {
   id: string;
@@ -17,13 +35,12 @@ export type Venue = {
   price: number;
   maxGuests: number;
   rating?: number;
-  meta?: {
-    wifi?: boolean;
-    parking?: boolean;
-    breakfast?: boolean;
-    pets?: boolean;
-  };
-  // Added: when we request _bookings=true
+
+  // ✅ add these:
+  meta?: VenueMeta;
+  location?: VenueLocation;
+
+  // present when you request `_bookings=true`
   bookings?: BookingLite[];
 };
 
@@ -59,7 +76,7 @@ export async function fetchVenues(params?: {
 
 export async function getVenueById(
   id: string,
-  opts?: { owner?: boolean; bookings?: boolean }
+  opts?: { owner?: boolean; bookings?: boolean },
 ): Promise<Venue> {
   const url = getVenueByIdUrl(id, opts);
   const json = await getJSON<{ data: Venue }>(url);
@@ -67,12 +84,7 @@ export async function getVenueById(
 }
 
 /** Availability: true if guests fit and the date range doesn't overlap any booking. */
-export function isVenueAvailable(
-  venue: Venue,
-  fromISO: string,
-  toISO: string,
-  guests: number
-) {
+export function isVenueAvailable(venue: Venue, fromISO: string, toISO: string, guests: number) {
   if (!fromISO || !toISO) return false;
   if (guests > venue.maxGuests) return false;
 

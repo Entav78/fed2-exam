@@ -7,10 +7,7 @@ export default function NotFoundPage() {
     <section className="mx-auto max-w-2xl p-6 text-center">
       <h1 className="text-3xl font-bold">404 — Page not found</h1>
       <p className="mt-2 text-muted">
-        We couldn’t find{' '}
-        <code className="bg-surface px-1 py-0.5 rounded">
-          {location.pathname}
-        </code>
+        We couldn’t find <code className="bg-surface px-1 py-0.5 rounded">{location.pathname}</code>
         .
       </p>
 

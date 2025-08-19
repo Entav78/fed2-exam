@@ -17,8 +17,7 @@ export default function Header() {
     return () => document.body.classList.remove('overflow-hidden');
   }, [menuOpen]);
 
-  const menuLink =
-    'block w-full text-left px-4 py-2 hover:underline transition';
+  const menuLink = 'block w-full text-left px-4 py-2 hover:underline transition';
 
   return (
     <header className="bg-header text-white px-4 py-4 shadow-md sticky top-0 z-50">
@@ -87,17 +86,13 @@ export default function Header() {
         <nav className="hidden sm:flex gap-6 text-lg font-medium items-center pr-2">
           <NavLink
             to="/"
-            className={({ isActive }) =>
-              isActive ? 'underline' : 'hover:underline'
-            }
+            className={({ isActive }) => (isActive ? 'underline' : 'hover:underline')}
           >
             Home
           </NavLink>
           <NavLink
             to="/profile"
-            className={({ isActive }) =>
-              `relative ${isActive ? 'underline' : 'hover:underline'}`
-            }
+            className={({ isActive }) => `relative ${isActive ? 'underline' : 'hover:underline'}`}
           >
             Profile
             {isLoggedIn && alertCount > 0 && (
@@ -108,9 +103,7 @@ export default function Header() {
           </NavLink>
           <NavLink
             to="/admin/venues"
-            className={({ isActive }) =>
-              isActive ? 'underline' : 'hover:underline'
-            }
+            className={({ isActive }) => (isActive ? 'underline' : 'hover:underline')}
           >
             Admin
           </NavLink>
@@ -123,17 +116,13 @@ export default function Header() {
             <>
               <NavLink
                 to="/login"
-                className={({ isActive }) =>
-                  isActive ? 'underline' : 'hover:underline'
-                }
+                className={({ isActive }) => (isActive ? 'underline' : 'hover:underline')}
               >
                 Login
               </NavLink>
               <NavLink
                 to="/register"
-                className={({ isActive }) =>
-                  isActive ? 'underline' : 'hover:underline'
-                }
+                className={({ isActive }) => (isActive ? 'underline' : 'hover:underline')}
               >
                 Register
               </NavLink>
@@ -159,12 +148,7 @@ export default function Header() {
         <div className="flex justify-between items-center px-4 pt-6 pb-4 border-b border-white">
           <span className="text-lg font-semibold">Menu</span>
           <button onClick={() => setMenuOpen(false)} aria-label="Close menu">
-            <svg
-              className="w-8 h-8"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -177,20 +161,12 @@ export default function Header() {
 
         <ul className="flex flex-col gap-4 p-4">
           <li>
-            <NavLink
-              to="/"
-              onClick={() => setMenuOpen(false)}
-              className={menuLink}
-            >
+            <NavLink to="/" onClick={() => setMenuOpen(false)} className={menuLink}>
               Home
             </NavLink>
           </li>
           <li>
-            <NavLink
-              to="/profile"
-              onClick={() => setMenuOpen(false)}
-              className={menuLink}
-            >
+            <NavLink to="/profile" onClick={() => setMenuOpen(false)} className={menuLink}>
               Profile
               {isLoggedIn && alertCount > 0 && (
                 <span className="absolute -top-2 -right-4 bg-danger text-white text-xs font-bold px-2 py-0.5 rounded-full">
@@ -200,11 +176,7 @@ export default function Header() {
             </NavLink>
           </li>
           <li>
-            <NavLink
-              to="/admin/venues"
-              onClick={() => setMenuOpen(false)}
-              className={menuLink}
-            >
+            <NavLink to="/admin/venues" onClick={() => setMenuOpen(false)} className={menuLink}>
               Admin
             </NavLink>
           </li>
@@ -218,20 +190,12 @@ export default function Header() {
           ) : (
             <>
               <li>
-                <NavLink
-                  to="/login"
-                  onClick={() => setMenuOpen(false)}
-                  className={menuLink}
-                >
+                <NavLink to="/login" onClick={() => setMenuOpen(false)} className={menuLink}>
                   Login
                 </NavLink>
               </li>
               <li>
-                <NavLink
-                  to="/register"
-                  onClick={() => setMenuOpen(false)}
-                  className={menuLink}
-                >
+                <NavLink to="/register" onClick={() => setMenuOpen(false)} className={menuLink}>
                   Register
                 </NavLink>
               </li>
