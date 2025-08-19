@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { DateRange } from 'react-day-picker';
 import { Link, useParams } from 'react-router-dom';
 
 import AmenitiesList from '@/components/venues/AmenitiesList';
+import BookingCalendar from '@/components/venues/BookingCalendar';
 import VenueGallery from '@/components/venues/VenueGallery';
 import VenueMap from '@/components/venues/VenueMap';
 import { getVenueById, type Venue } from '@/lib/api/venues';
@@ -19,7 +21,7 @@ export default function VenueDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [fallbackCoords, setFallbackCoords] = useState<{ lat: number; lng: number } | null>(null);
-
+  const [range, setRange] = useState<DateRange | undefined>();
   // fetch venue
   useEffect(() => {
     if (!id) return;
@@ -36,6 +38,12 @@ export default function VenueDetailPage() {
     })();
   }, [id]);
 
+  // (optional) compute nights for price display
+  const nights = useMemo(() => {
+    if (!range?.from || !range?.to) return 0;
+    return Math.max(0, Math.round((+range.to - +range.from) / 86400000));
+  }, [range]);
+
   // geocode fallback: runs when venue changes; bails if coords are valid
   useEffect(() => {
     if (!venue) return;
@@ -49,7 +57,7 @@ export default function VenueDetailPage() {
       const gc = await geocodeFromLocation(venue.location);
       if (gc) setFallbackCoords(gc);
     })();
-  }, [venue?.id]); // re-run per venue
+  }, [venue]); // re-run per venue
 
   // ✅ Now it's safe to early-return — no hooks below this line
   if (loading) return <p>Loading…</p>;
@@ -110,6 +118,25 @@ export default function VenueDetailPage() {
         ) : (
           <p className="text-muted text-sm">No bookings yet.</p>
         )}
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-2">Select dates</h2>
+        <BookingCalendar
+          bookings={(venue.bookings ?? []).map((b) => ({ dateFrom: b.dateFrom, dateTo: b.dateTo }))}
+          selected={range}
+          onSelect={setRange}
+        />
+        <div className="mt-3 flex items-center justify-between">
+          <div className="text-sm text-muted">
+            {nights > 0
+              ? `${nights} night${nights === 1 ? '' : 's'}`
+              : 'Pick check-in and check-out'}
+          </div>
+          {nights > 0 && (
+            <div className="font-semibold">Total: {nok.format(venue.price * nights)}</div>
+          )}
+        </div>
       </section>
 
       {/* Location */}
