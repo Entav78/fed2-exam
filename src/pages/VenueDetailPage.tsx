@@ -5,20 +5,22 @@ import AmenitiesList from '@/components/venues/AmenitiesList';
 import VenueGallery from '@/components/venues/VenueGallery';
 import VenueMap from '@/components/venues/VenueMap';
 import { getVenueById, type Venue } from '@/lib/api/venues';
+import { geocodeFromLocation } from '@/lib/geocode';
 import { isLikelyValidCoords } from '@/utils/geo';
 import { formatLocation } from '@/utils/location';
 
-const nok = new Intl.NumberFormat('no-NO', {
-  style: 'currency',
-  currency: 'NOK',
-});
+const nok = new Intl.NumberFormat('no-NO', { style: 'currency', currency: 'NOK' });
 
 export default function VenueDetailPage() {
   const { id } = useParams<{ id: string }>();
+
+  // ✅ All hooks live above any early returns
   const [venue, setVenue] = useState<Venue | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fallbackCoords, setFallbackCoords] = useState<{ lat: number; lng: number } | null>(null);
 
+  // fetch venue
   useEffect(() => {
     if (!id) return;
     (async () => {
@@ -34,8 +36,22 @@ export default function VenueDetailPage() {
     })();
   }, [id]);
 
-  const locationText = formatLocation(venue?.location, 'Location not specified');
+  // geocode fallback: runs when venue changes; bails if coords are valid
+  useEffect(() => {
+    if (!venue) return;
+    const lat = venue.location?.lat;
+    const lng = venue.location?.lng;
+    if (isLikelyValidCoords(lat, lng)) {
+      setFallbackCoords(null);
+      return;
+    }
+    (async () => {
+      const gc = await geocodeFromLocation(venue.location);
+      if (gc) setFallbackCoords(gc);
+    })();
+  }, [venue?.id]); // re-run per venue
 
+  // ✅ Now it's safe to early-return — no hooks below this line
   if (loading) return <p>Loading…</p>;
   if (error) return <p className="text-danger">Error: {error}</p>;
   if (!venue) return <p className="text-muted">No venue found.</p>;
@@ -43,6 +59,13 @@ export default function VenueDetailPage() {
   const lat = venue.location?.lat;
   const lng = venue.location?.lng;
   const hasCoords = isLikelyValidCoords(lat, lng);
+  const locationText = formatLocation(venue.location, 'Location not specified');
+
+  const mapsHref = hasCoords
+    ? `https://www.google.com/maps?q=${lat},${lng}`
+    : locationText
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationText)}`
+      : undefined;
 
   return (
     <article className="mx-auto max-w-5xl space-y-6">
@@ -50,7 +73,6 @@ export default function VenueDetailPage() {
         &larr; Back to search
       </Link>
 
-      {/* Title + quick facts */}
       <header className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold">{venue.name}</h1>
         <p className="text-muted">
@@ -59,10 +81,8 @@ export default function VenueDetailPage() {
         <p className="text-xl font-semibold">{nok.format(venue.price)} / night</p>
       </header>
 
-      {/* Gallery */}
       <VenueGallery media={venue.media} name={venue.name} />
 
-      {/* Description */}
       {venue.description && (
         <section>
           <h2 className="text-lg font-semibold mb-2">About</h2>
@@ -70,13 +90,11 @@ export default function VenueDetailPage() {
         </section>
       )}
 
-      {/* Amenities */}
       <section>
         <h2 className="text-lg font-semibold mb-2">Amenities</h2>
         <AmenitiesList meta={venue.meta} />
       </section>
 
-      {/* Booked dates */}
       <section>
         <h2 className="text-lg font-semibold mb-2">Booked dates</h2>
         {venue.bookings?.length ? (
@@ -94,20 +112,36 @@ export default function VenueDetailPage() {
         )}
       </section>
 
+      {/* Location */}
       <section>
         <h2 className="text-lg font-semibold mb-2">Location</h2>
-        <p className="text-muted mb-3">
-          {formatLocation(venue.location, 'Location not specified')}
-        </p>
+        <p className="text-muted mb-3">{locationText}</p>
 
         {hasCoords ? (
           <VenueMap lat={lat!} lng={lng!} name={venue.name} height={320} />
+        ) : fallbackCoords ? (
+          <VenueMap
+            lat={fallbackCoords.lat}
+            lng={fallbackCoords.lng}
+            name={venue.name}
+            height={320}
+          />
         ) : (
           <p className="text-sm text-muted">No valid map location for this venue.</p>
         )}
+
+        {mapsHref && locationText && locationText.trim().length > 2 && (
+          <a
+            className="mt-2 inline-block underline text-brand"
+            target="_blank"
+            rel="noopener noreferrer"
+            href={mapsHref}
+          >
+            Open in Maps ↗
+          </a>
+        )}
       </section>
 
-      {/* CTA (stub) */}
       <div className="flex gap-3">
         <button
           className="rounded bg-brand px-4 py-2 text-white"
