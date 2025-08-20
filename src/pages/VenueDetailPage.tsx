@@ -104,23 +104,6 @@ export default function VenueDetailPage() {
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold mb-2">Booked dates</h2>
-        {venue.bookings?.length ? (
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {venue.bookings.map((b) => (
-              <li key={b.id} className="rounded border border-border-light p-2 text-sm bg-card">
-                {new Date(b.dateFrom).toLocaleDateString()} →{' '}
-                {new Date(b.dateTo).toLocaleDateString()}
-                <span className="opacity-70"> • guests {b.guests}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-muted text-sm">No bookings yet.</p>
-        )}
-      </section>
-
-      <section>
         <h2 className="text-lg font-semibold mb-2">Select dates</h2>
         <BookingCalendar
           bookings={(venue.bookings ?? []).map((b) => ({ dateFrom: b.dateFrom, dateTo: b.dateTo }))}
