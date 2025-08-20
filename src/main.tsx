@@ -9,6 +9,7 @@ import VenueDetailPage from '@/pages/VenueDetailPage';
 
 import App from './App';
 
+import 'react-day-picker/dist/style.css';
 import 'leaflet/dist/leaflet.css';
 import './index.css';
 
