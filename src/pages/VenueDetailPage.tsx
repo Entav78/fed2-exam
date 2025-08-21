@@ -68,7 +68,7 @@ export default function VenueDetailPage() {
       const gc = await geocodeFromLocation(venue.location);
       if (gc) setFallbackCoords(gc);
     })();
-  }, [venue?.id]);
+  }, [venue]);
   // re-run per venue
 
   // ✅ Now it's safe to early-return — no hooks below this line

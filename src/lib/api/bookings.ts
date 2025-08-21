@@ -74,16 +74,24 @@ export type BookingInput = Pick<BookingBase, 'dateFrom' | 'dateTo' | 'guests'> &
 
 // --- Internal helper ---
 
+// in src/lib/api/bookings.ts
 async function getJSON<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, { headers: buildHeaders(), ...init });
+  const method = (init?.method ?? 'GET').toString().toUpperCase();
+
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      ...buildHeaders(method), // ← ensures Content-Type for POST/PUT/PATCH
+      ...(init?.headers as Record<string, string> | undefined),
+    },
+  });
+
   if (!res.ok) {
     let msg = `HTTP ${res.status}`;
     try {
       const j = await res.json();
       msg = j?.errors?.[0]?.message ?? j?.message ?? msg;
-    } catch {
-      // intentionally ignore non-JSON bodies
-    }
+    } catch {}
     throw new Error(msg);
   }
   return res.json() as Promise<T>;
@@ -115,7 +123,9 @@ export async function getBookingById(
   return json.data;
 }
 
-// Accept either { venueId } OR { venue: { id } }
+// NOTE: some Holidaze variants require `venueId`; others accept `venue: { id }`.
+// I send both for compatibility.
+
 type CreateBookingInput = {
   dateFrom: string; // YYYY-MM-DD
   dateTo: string; // YYYY-MM-DD
@@ -125,18 +135,20 @@ type CreateBookingInput = {
 export async function createBooking(body: CreateBookingInput): Promise<Booking> {
   const url = listBookingsUrl();
 
-  // Normalize to the API's expected shape: venue: { id }
+  // normalize to an id either way
   const id = 'venueId' in body ? body.venueId : body.venue.id;
 
   const payload = {
     dateFrom: body.dateFrom,
     dateTo: body.dateTo,
     guests: body.guests,
-    venue: { id }, // <- the important part
+    venueId: id, // <- required by your backend
+    venue: { id }, // <- harmless if ignored, useful on other variants
   };
 
   const json = await getJSON<{ data: Booking }>(url, {
     method: 'POST',
+    headers: buildHeaders('POST'), // now guaranteed Content-Type: application/json
     body: JSON.stringify(payload),
   });
   return json.data;
