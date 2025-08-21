@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
+import toast from 'react-hot-toast';
 import { Link, useParams } from 'react-router-dom';
 
+import { Button } from '@/components/ui/Button';
 import AmenitiesList from '@/components/venues/AmenitiesList';
 import BookingCalendar from '@/components/venues/BookingCalendar';
 import VenueGallery from '@/components/venues/VenueGallery';
 import VenueMap from '@/components/venues/VenueMap';
+import { createBooking } from '@/lib/api/bookings';
+import type { BookingLite } from '@/lib/api/venues';
 import { getVenueById, type Venue } from '@/lib/api/venues';
 import { geocodeFromLocation } from '@/lib/geocode';
+import { useAuthStore } from '@/store/authStore';
+import { dateOnly } from '@/utils/date';
 import { isLikelyValidCoords } from '@/utils/geo';
 import { formatLocation } from '@/utils/location';
 
@@ -22,6 +28,11 @@ export default function VenueDetailPage() {
   const [loading, setLoading] = useState(true);
   const [fallbackCoords, setFallbackCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [range, setRange] = useState<DateRange | undefined>();
+  const loggedIn = useAuthStore((s) => s.isLoggedIn());
+  const currentUser = useAuthStore((s) => s.user);
+  const [guests, setGuests] = useState(1);
+  const [bookingBusy, setBookingBusy] = useState(false);
+
   // fetch venue
   useEffect(() => {
     if (!id) return;
@@ -57,7 +68,8 @@ export default function VenueDetailPage() {
       const gc = await geocodeFromLocation(venue.location);
       if (gc) setFallbackCoords(gc);
     })();
-  }, [venue]); // re-run per venue
+  }, [venue?.id]);
+  // re-run per venue
 
   // ✅ Now it's safe to early-return — no hooks below this line
   if (loading) return <p>Loading…</p>;
@@ -74,6 +86,49 @@ export default function VenueDetailPage() {
     : locationText
       ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationText)}`
       : undefined;
+
+  async function handleBook() {
+    if (!venue) return;
+    if (!loggedIn) return toast.error('Please log in to book');
+    if (!range?.from || !range?.to) return toast.error('Pick check-in and check-out');
+
+    const g = Number.isFinite(guests) ? guests : 1;
+    if (g < 1 || g > venue.maxGuests) {
+      return toast.error(`Guests must be between 1 and ${venue.maxGuests}`);
+    }
+    // prevent booking your own venue
+    if (currentUser?.name && venue.owner?.name && currentUser.name === venue.owner.name) {
+      return toast.error("You can't book your own venue");
+    }
+
+    setBookingBusy(true);
+    try {
+      const newBooking = await createBooking({
+        dateFrom: dateOnly(range.from),
+        dateTo: dateOnly(range.to),
+        guests: g,
+        venue: { id: venue.id },
+      });
+
+      const lite: BookingLite = {
+        id: newBooking.id,
+        dateFrom: newBooking.dateFrom,
+        dateTo: newBooking.dateTo,
+        guests: newBooking.guests,
+      };
+
+      setVenue((v) => (v ? { ...v, bookings: [...(v.bookings ?? []), lite] } : v));
+
+      setRange(undefined);
+      toast.success('Booking confirmed!');
+      // optional: navigate('/bookings');
+    } catch (e) {
+      console.error('Booking failed:', e);
+      toast.error(e instanceof Error ? e.message : 'Booking failed');
+    } finally {
+      setBookingBusy(false);
+    }
+  }
 
   return (
     <article className="mx-auto max-w-5xl space-y-6">
@@ -122,6 +177,33 @@ export default function VenueDetailPage() {
         </div>
       </section>
 
+      <div className="mt-3 flex items-center gap-3">
+        <label className="text-sm">
+          Guests
+          <input
+            type="number"
+            min={1}
+            max={venue.maxGuests}
+            value={guests}
+            onChange={(e) =>
+              setGuests(Math.max(1, Math.min(venue.maxGuests, Number(e.target.value) || 1)))
+            }
+            className="ml-2 w-20 input-field"
+          />
+          <span className="ml-2 opacity-70">/ max {venue.maxGuests}</span>
+        </label>
+
+        <Button
+          onClick={handleBook}
+          disabled={!loggedIn || bookingBusy || !range?.from || !range?.to}
+          isLoading={bookingBusy}
+          className="ml-auto"
+          variant="form"
+        >
+          Book this venue
+        </Button>
+      </div>
+
       {/* Location */}
       <section>
         <h2 className="text-lg font-semibold mb-2">Location</h2>
@@ -153,12 +235,6 @@ export default function VenueDetailPage() {
       </section>
 
       <div className="flex gap-3">
-        <button
-          className="rounded bg-brand px-4 py-2 text-white"
-          onClick={() => alert('Booking flow coming next ✨')}
-        >
-          Book this venue
-        </button>
         <button
           className="rounded border border-border-light px-4 py-2"
           onClick={() => window.history.back()}

@@ -1,6 +1,9 @@
-import { buildHeaders, getBookingByIdUrl, listBookingsUrl } from './constants';
-
-// --- Shared subtypes (aligns with your schema) ---
+import {
+  API_PROFILES,
+  buildHeaders,
+  getBookingByIdUrl,
+  listBookingsUrl,
+} from '@/lib/api/constants';
 
 export type Media = { url: string; alt?: string };
 
@@ -64,6 +67,11 @@ export type Booking = BookingBase & {
   customer?: ProfileLite;
 };
 
+// Optional: a small alias so we don’t inline this shape everywhere
+export type BookingInput = Pick<BookingBase, 'dateFrom' | 'dateTo' | 'guests'> & {
+  venueId: string;
+};
+
 // --- Internal helper ---
 
 async function getJSON<T>(url: string, init?: RequestInit): Promise<T> {
@@ -107,19 +115,29 @@ export async function getBookingById(
   return json.data;
 }
 
-// --- Extras you will likely need soon ---
-
-/** Create a booking */
-export async function createBooking(body: {
-  dateFrom: string; // ISO
-  dateTo: string; // ISO
+// Accept either { venueId } OR { venue: { id } }
+type CreateBookingInput = {
+  dateFrom: string; // YYYY-MM-DD
+  dateTo: string; // YYYY-MM-DD
   guests: number;
-  venueId: string;
-}): Promise<Booking> {
-  const url = listBookingsUrl(); // base /bookings
+} & ({ venueId: string } | { venue: { id: string } });
+
+export async function createBooking(body: CreateBookingInput): Promise<Booking> {
+  const url = listBookingsUrl();
+
+  // Normalize to the API's expected shape: venue: { id }
+  const id = 'venueId' in body ? body.venueId : body.venue.id;
+
+  const payload = {
+    dateFrom: body.dateFrom,
+    dateTo: body.dateTo,
+    guests: body.guests,
+    venue: { id }, // <- the important part
+  };
+
   const json = await getJSON<{ data: Booking }>(url, {
     method: 'POST',
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
   });
   return json.data;
 }
@@ -128,6 +146,16 @@ export async function createBooking(body: {
 export async function deleteBooking(id: string): Promise<void> {
   const url = getBookingByIdUrl(id);
   await getJSON<void>(url, { method: 'DELETE' });
+}
+
+// --- “My bookings” helper (for /bookings page) ---
+
+export async function getMyBookings(profileName: string, withVenue = true) {
+  const qs = new URLSearchParams();
+  if (withVenue) qs.set('_venue', 'true');
+  const url = `${API_PROFILES}/${encodeURIComponent(profileName)}/bookings?${qs}`;
+  const json = await getJSON<{ data: Booking[] }>(url);
+  return json.data;
 }
 
 // Small helper you might like in UI

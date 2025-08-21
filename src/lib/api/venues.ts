@@ -1,3 +1,5 @@
+import type { ProfileLite } from '@/lib/api/bookings';
+
 import { buildHeaders, getVenueByIdUrl, listVenuesUrl } from './constants';
 
 // if not already present:
@@ -35,13 +37,14 @@ export type Venue = {
   price: number;
   maxGuests: number;
   rating?: number;
-
-  // ✅ add these:
   meta?: VenueMeta;
   location?: VenueLocation;
 
   // present when you request `_bookings=true`
   bookings?: BookingLite[];
+
+  // present when you request `_owner=true` or `{ owner: true }`
+  owner?: ProfileLite;
 };
 
 async function getJSON<T>(url: string, init?: RequestInit): Promise<T> {
