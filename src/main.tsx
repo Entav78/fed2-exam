@@ -2,14 +2,22 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
-import App from '@/App';
+// protected pages (stub if not built yet)
+import BookingsPage from '@/pages/BookingsPage';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
+import ManageVenuesPage from '@/pages/ManageVenuesPage';
+import NewVenuePage from '@/pages/NewVenuePage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import RegisterPage from '@/pages/RegisterPage';
 import RootError from '@/pages/RootError';
 import VenueDetailPage from '@/pages/VenueDetailPage';
+// guards
+import { RequireAuth, RequireManager } from '@/routes/guards';
 
+import App from './App';
+
+import './index.css';
 // 3rd-party CSS first, then your Tailwind
 import 'react-day-picker/dist/style.css';
 import 'leaflet/dist/leaflet.css';
@@ -26,6 +34,18 @@ const router = createBrowserRouter([
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
       { path: '*', element: <NotFoundPage /> }, // catch-all under /
+    ],
+  },
+
+  {
+    element: <RequireAuth />, // logged-in only
+    children: [{ path: 'bookings', element: <BookingsPage /> }],
+  },
+  {
+    element: <RequireManager />, // managers only
+    children: [
+      { path: 'manage', element: <ManageVenuesPage /> },
+      { path: 'venues/new', element: <NewVenuePage /> },
     ],
   },
 ]);
