@@ -40,6 +40,7 @@ export default tseslint.config([
         },
       ],
       'simple-import-sort/exports': 'error',
+      'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
 ]);
