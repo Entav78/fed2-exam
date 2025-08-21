@@ -18,13 +18,11 @@ export async function refreshVenueManager(
       headers: buildHeaders(token),
     });
     if (!res.ok) return undefined;
+
     let json: ProfileResponse | null = null;
     try {
       json = (await res.json()) as ProfileResponse;
-    } catch {
-      // ignore non-JSON bodies
-    }
-
+    } catch {}
     const flag = typeof json?.data?.venueManager === 'boolean' ? json.data.venueManager : undefined;
 
     if (typeof flag === 'boolean') {
@@ -34,4 +32,20 @@ export async function refreshVenueManager(
   } catch {
     return undefined;
   }
+}
+
+export async function setVenueManager(
+  name: string,
+  enabled: boolean,
+  token: string,
+): Promise<boolean> {
+  const res = await fetch(`${API_PROFILES}/${encodeURIComponent(name)}`, {
+    method: 'PUT',
+    headers: buildHeaders(token),
+    body: JSON.stringify({ venueManager: enabled }),
+  });
+  if (!res.ok) return false;
+
+  const j = (await res.json().catch(() => ({}))) as ProfileResponse;
+  return !!j?.data?.venueManager;
 }

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { API_PROFILES } from '@/lib/api/constants';
 import { buildHeaders } from '@/lib/api/constants';
 import { getLoginUrl } from '@/lib/api/constants';
-import { refreshVenueManager } from '@/lib/api/profiles';
+import { refreshVenueManager, setVenueManager } from '@/lib/api/profiles';
 import { useAuthStore } from '@/store/authStore';
 
 const API_KEY = import.meta.env.VITE_API_KEY as string | undefined;
@@ -80,6 +80,17 @@ const LoginPage = () => {
       });
 
       await refreshVenueManager(d.name, d.accessToken);
+
+      // If still false but email is stud.noroff.no, try to enable it
+      const isStud = /@stud\.noroff\.no$/i.test(d.email);
+      const current = useAuthStore.getState().user?.venueManager;
+
+      if (isStud && current === false) {
+        const ok = await setVenueManager(d.name, true, d.accessToken);
+        if (ok) {
+          useAuthStore.setState((s) => (s.user ? { user: { ...s.user, venueManager: true } } : s));
+        }
+      }
 
       try {
         const url = `${API_PROFILES}/${encodeURIComponent(d.name)}`;
