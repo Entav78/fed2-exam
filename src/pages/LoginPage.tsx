@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { API_PROFILES } from '@/lib/api/constants';
 import { buildHeaders } from '@/lib/api/constants';
 import { getLoginUrl } from '@/lib/api/constants';
+import { refreshVenueManager } from '@/lib/api/profiles';
 import { useAuthStore } from '@/store/authStore';
 
 const API_KEY = import.meta.env.VITE_API_KEY as string | undefined;
@@ -77,6 +78,8 @@ const LoginPage = () => {
         // include this only if your store's login signature accepts it:
         avatarUrl: d.avatar?.url ?? null,
       });
+
+      await refreshVenueManager(d.name, d.accessToken);
 
       try {
         const url = `${API_PROFILES}/${encodeURIComponent(d.name)}`;

@@ -1,10 +1,20 @@
+import { useEffect } from 'react';
 import { Toaster } from 'react-hot-toast';
 import { Outlet } from 'react-router-dom';
 
 import Footer from '@/components/layout/Footer';
 import Header from '@/components/layout/Header';
+import { refreshVenueManager } from '@/lib/api/profiles';
+import { useAuthStore } from '@/store/authStore';
 
 export default function App() {
+  useEffect(() => {
+    const { user, accessToken } = useAuthStore.getState();
+    if (user?.name && accessToken) {
+      refreshVenueManager(user.name, accessToken).catch(() => {});
+    }
+  }, []);
+
   return (
     <div className="min-h-screen grid grid-rows-[auto_1fr_auto] bg-background text-text">
       <a
