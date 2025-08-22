@@ -37,10 +37,11 @@ const router = createBrowserRouter([
         ],
       },
       {
-        element: <RequireManager />,
+        element: <RequireManager />, // managers only
         children: [
-          { path: 'venue/new', element: <ManageVenuePage /> },
           { path: 'manage', element: <ManageVenuePage /> },
+          { path: 'manage/:id', element: <ManageVenuePage /> },
+          { path: 'venues/new', element: <ManageVenuePage /> },
         ],
       },
 

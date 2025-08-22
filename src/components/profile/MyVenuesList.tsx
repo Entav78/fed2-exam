@@ -82,7 +82,7 @@ export default function MyVenuesList() {
               </Link>
               {/* wire up when you have an edit page */}
               <Link
-                to="/manage"
+                to={`/manage/${v.id}`}
                 className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
               >
                 Manage
