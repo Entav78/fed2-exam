@@ -1,5 +1,5 @@
 // src/utils/location.ts
-import type { VenueLocation } from '@/lib/api/venues';
+import type { VenueLocation } from '@/types/common';
 
 export function formatLocation(l?: VenueLocation, fallback = ''): string {
   if (!l) return fallback;

@@ -1,7 +1,7 @@
 // src/main.tsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 
 import App from '@/App';
 import BookingsPage from '@/pages/BookingsPage';
@@ -41,7 +41,7 @@ const router = createBrowserRouter([
         children: [
           { path: 'manage', element: <ManageVenuePage /> },
           { path: 'manage/:id', element: <ManageVenuePage /> },
-          { path: 'venues/new', element: <ManageVenuePage /> },
+          { path: 'venues/new', element: <Navigate to="/manage" replace /> },
         ],
       },
 

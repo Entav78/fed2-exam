@@ -1,5 +1,5 @@
 // src/lib/geocode.ts
-import type { VenueLocation } from '@/lib/api/venues';
+import type { VenueLocation } from '@/types/common';
 import { isLikelyValidCoords } from '@/utils/geo';
 
 // src/lib/geocode.ts

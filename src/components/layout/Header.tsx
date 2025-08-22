@@ -118,9 +118,6 @@ export default function Header() {
               <NavLink to="/manage" className={link}>
                 Manage venues
               </NavLink>
-              <NavLink to="/venues/new" className={link}>
-                New venue
-              </NavLink>
             </>
           )}
 
@@ -200,11 +197,6 @@ export default function Header() {
               <li>
                 <NavLink to="/manage" onClick={() => setMenuOpen(false)} className={menuLink}>
                   Manage venues
-                </NavLink>
-              </li>
-              <li>
-                <NavLink to="/venues/new" onClick={() => setMenuOpen(false)} className={menuLink}>
-                  New venue
                 </NavLink>
               </li>
             </>
