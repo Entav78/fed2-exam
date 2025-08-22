@@ -1,15 +1,18 @@
+// src/routes/guards.tsx
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 import { useAuthStore } from '@/store/authStore';
 
 export function RequireAuth() {
-  const isLoggedIn = useAuthStore((s) => s.isLoggedIn());
+  const loggedIn = useAuthStore((s) => s.isLoggedIn());
   const loc = useLocation();
-  return isLoggedIn ? <Outlet /> : <Navigate to="/login" replace state={{ from: loc }} />;
+  if (!loggedIn) return <Navigate to="/login" replace state={{ from: loc }} />;
+  return <Outlet />;
 }
 
 export function RequireManager() {
-  const isManager = useAuthStore((s) => s.isManager());
+  const role = useAuthStore((s) => s.role());
   const loc = useLocation();
-  return isManager ? <Outlet /> : <Navigate to="/" replace state={{ from: loc }} />;
+  if (role !== 'manager') return <Navigate to="/login" replace state={{ from: loc }} />;
+  return <Outlet />;
 }

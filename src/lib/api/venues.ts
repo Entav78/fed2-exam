@@ -1,6 +1,12 @@
 import type { Media, ProfileLite, VenueLocation, VenueMeta } from '@/types/common';
 
-import { API_PROFILES, buildHeaders, getVenueByIdUrl, listVenuesUrl } from './constants';
+import {
+  API_PROFILES,
+  API_VENUES,
+  buildHeaders,
+  getVenueByIdUrl,
+  listVenuesUrl,
+} from './constants';
 
 // 👇 canonical booking shape for venues
 export type BookingLite = {
@@ -26,6 +32,17 @@ export type Venue = {
 
   // present when you request `_owner=true` or `{ owner: true }`
   owner?: ProfileLite;
+};
+
+export type VenueInput = {
+  name: string;
+  description?: string;
+  media?: Media[]; // [{ url, alt? }]
+  price: number;
+  maxGuests: number;
+  rating?: number;
+  meta?: VenueMeta; // { wifi?, parking?, breakfast?, pets? }
+  location?: VenueLocation; // { address?, city?, zip?, country?, continent?, lat?, lng? }
 };
 
 async function getJSON<T>(url: string, init?: RequestInit): Promise<T> {
@@ -65,6 +82,46 @@ export async function getVenueById(
   const url = getVenueByIdUrl(id, opts);
   const json = await getJSON<{ data: Venue }>(url);
   return json.data;
+}
+
+// CREATE
+export async function createVenue(body: VenueInput) {
+  const url = `${API_VENUES}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: buildHeaders('POST'),
+    body: JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.errors?.[0]?.message ?? json?.message ?? 'Create failed');
+  return json.data as Venue;
+}
+
+// UPDATE
+export async function updateVenue(id: string, body: Partial<VenueInput>) {
+  const url = `${API_VENUES}/${encodeURIComponent(id)}`;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: buildHeaders('PUT'),
+    body: JSON.stringify(body),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.errors?.[0]?.message ?? json?.message ?? 'Update failed');
+  return json.data as Venue;
+}
+
+// DELETE
+export async function deleteVenue(id: string) {
+  const url = `${API_VENUES}/${encodeURIComponent(id)}`;
+  const res = await fetch(url, { method: 'DELETE', headers: buildHeaders('DELETE') });
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try {
+      const j = await res.json();
+      msg = j?.errors?.[0]?.message ?? j?.message ?? msg;
+    } catch {}
+    throw new Error(msg);
+  }
 }
 
 export async function getMyVenues(profileName: string, withBookings = true): Promise<Venue[]> {

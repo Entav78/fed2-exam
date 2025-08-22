@@ -1,17 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
 import { type Booking, deleteBooking, getMyBookings } from '@/lib/api/bookings';
 import { useAuthStore } from '@/store/authStore';
 
-function isPast(b: Booking, nowTs: number) {
-  return new Date(b.dateTo).getTime() < nowTs;
+function byStartAsc(a: Booking, b: Booking) {
+  return new Date(a.dateFrom).getTime() - new Date(b.dateFrom).getTime();
 }
 
 export default function MyBookingsList() {
   const user = useAuthStore((s) => s.user);
   const [rows, setRows] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -19,29 +21,31 @@ export default function MyBookingsList() {
     (async () => {
       try {
         setLoading(true);
-        const data = await getMyBookings(user.name, true);
-        setRows(data);
+        const data = await getMyBookings(user.name, true); // _venue=true
+        setRows([...data].sort(byStartAsc));
+        setError(null);
       } catch (e) {
-        toast.error((e as Error).message);
+        setError((e as Error).message);
       } finally {
         setLoading(false);
       }
     })();
   }, [user?.name]);
 
-  const nowTs = Date.now();
-  const upcoming = useMemo(() => rows.filter((b) => !isPast(b, nowTs)), [rows, nowTs]).slice(0, 5);
-  const past = useMemo(() => rows.filter((b) => isPast(b, nowTs)), [rows, nowTs]).slice(0, 3);
+  const now = new Date();
+  const isPast = (b: Booking) => new Date(b.dateTo).getTime() < now.getTime();
+
+  const hasData = rows.length > 0;
 
   async function cancel(id: string) {
     const prev = rows;
     setBusyId(id);
-    setRows((r) => r.filter((b) => b.id !== id));
+    setRows((r) => r.filter((b) => b.id !== id)); // optimistic
     try {
       await deleteBooking(id);
       toast.success('Booking cancelled');
     } catch (e) {
-      setRows(prev);
+      setRows(prev); // rollback
       toast.error((e as Error).message ?? 'Could not cancel booking');
     } finally {
       setBusyId(null);
@@ -49,49 +53,65 @@ export default function MyBookingsList() {
   }
 
   if (loading) return <p className="text-sm text-muted">Loading bookings…</p>;
-  if (!rows.length) return <p className="text-sm text-muted">No bookings yet.</p>;
+  if (error) return <p className="text-danger text-sm">Error: {error}</p>;
+  if (!hasData) return <p className="text-sm text-muted">You haven’t made any bookings yet.</p>;
 
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold">Upcoming</h3>
-      <ul className="space-y-2">
-        {upcoming.map((b) => (
-          <li key={b.id} className="rounded border border-border-light bg-card p-3">
-            <div className="font-medium">
-              {new Date(b.dateFrom).toLocaleDateString()} →{' '}
-              {new Date(b.dateTo).toLocaleDateString()}
-            </div>
-            <div className="text-sm text-muted">Guests {b.guests}</div>
-            {b.venue && <div className="text-sm">{b.venue.name}</div>}
-            <div className="mt-2">
-              <button
-                onClick={() => cancel(b.id)}
-                disabled={busyId === b.id}
-                className={`rounded border border-border-light px-3 py-1 ${busyId === b.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {busyId === b.id ? 'Cancelling…' : 'Cancel'}
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+      {rows.map((b) => {
+        const img = b.venue?.media?.[0];
+        const city = b.venue?.location?.city;
+        return (
+          <div
+            key={b.id}
+            className={`flex items-center gap-4 rounded border border-border-light bg-card p-4 shadow ${
+              isPast(b) ? 'opacity-80' : ''
+            }`}
+          >
+            {/* thumbnail */}
+            {img?.url ? (
+              <img
+                src={img.url}
+                alt={img.alt || b.venue?.name || 'Venue image'}
+                className="h-16 w-16 rounded object-cover"
+              />
+            ) : (
+              <div className="h-16 w-16 rounded bg-muted" />
+            )}
 
-      <h3 className="font-semibold mt-4">Recent past</h3>
-      {past.length ? (
-        <ul className="space-y-2">
-          {past.map((b) => (
-            <li key={b.id} className="rounded border border-border-light bg-card p-3 opacity-80">
-              <div className="font-medium">
+            {/* info */}
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold leading-tight line-clamp-1">{b.venue?.name ?? 'Venue'}</p>
+              {city && <p className="text-sm text-muted">{city}</p>}
+              <p className="mt-1 text-sm">
                 {new Date(b.dateFrom).toLocaleDateString()} →{' '}
-                {new Date(b.dateTo).toLocaleDateString()}
-              </div>
-              {b.venue && <div className="text-sm">{b.venue.name}</div>}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-muted">No past bookings.</p>
-      )}
+                {new Date(b.dateTo).toLocaleDateString()} • Guests {b.guests}
+              </p>
+            </div>
+
+            {/* actions */}
+            <div className="flex items-center gap-2">
+              <Link
+                to={`/venues/${b.venue?.id ?? ''}`}
+                className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
+              >
+                Open
+              </Link>
+              {!isPast(b) && (
+                <button
+                  onClick={() => cancel(b.id)}
+                  disabled={busyId === b.id}
+                  className={`rounded border border-border-light px-3 py-1 text-sm ${
+                    busyId === b.id ? 'cursor-not-allowed opacity-50' : 'hover:bg-muted'
+                  }`}
+                >
+                  {busyId === b.id ? 'Cancelling…' : 'Cancel'}
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

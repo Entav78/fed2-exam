@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import type { Media } from '@/lib/api/venues';
+import type { Media } from '@/types/common';
 
 type Props = { media?: Media[]; name: string };
 
