@@ -9,6 +9,7 @@ import LoginPage from '@/pages/LoginPage';
 import ManageVenuesPage from '@/pages/ManageVenuesPage';
 import NewVenuePage from '@/pages/NewVenuePage';
 import NotFoundPage from '@/pages/NotFoundPage';
+import ProfilePage from '@/pages/ProfilePage';
 import RegisterPage from '@/pages/RegisterPage';
 import RootError from '@/pages/RootError';
 import VenueDetailPage from '@/pages/VenueDetailPage';
@@ -39,7 +40,11 @@ const router = createBrowserRouter([
 
   {
     element: <RequireAuth />, // logged-in only
-    children: [{ path: 'bookings', element: <BookingsPage /> }],
+
+    children: [
+      { path: 'profile', element: <ProfilePage /> },
+      { path: 'bookings', element: <BookingsPage /> },
+    ],
   },
   {
     element: <RequireManager />, // managers only

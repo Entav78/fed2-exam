@@ -1,6 +1,6 @@
 import type { Media, ProfileLite, VenueLocation, VenueMeta } from '@/types/common';
 
-import { buildHeaders, getVenueByIdUrl, listVenuesUrl } from './constants';
+import { API_PROFILES, buildHeaders, getVenueByIdUrl, listVenuesUrl } from './constants';
 
 // 👇 canonical booking shape for venues
 export type BookingLite = {
@@ -64,6 +64,20 @@ export async function getVenueById(
 ): Promise<Venue> {
   const url = getVenueByIdUrl(id, opts);
   const json = await getJSON<{ data: Venue }>(url);
+  return json.data;
+}
+
+export async function getMyVenues(profileName: string, withBookings = true): Promise<Venue[]> {
+  const qs = new URLSearchParams();
+  if (withBookings) qs.set('_bookings', 'true');
+  const url = `${API_PROFILES}/${encodeURIComponent(profileName)}/venues?${qs}`;
+  const res = await fetch(url, { headers: buildHeaders() });
+  if (!res.ok) {
+    const j = await res.json().catch(() => ({}));
+    const msg = j?.errors?.[0]?.message ?? j?.message ?? `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  const json = (await res.json()) as { data: Venue[] };
   return json.data;
 }
 
