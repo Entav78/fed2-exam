@@ -3,14 +3,13 @@ import type { DateRange } from 'react-day-picker';
 import { DayPicker } from 'react-day-picker';
 import { addDays, areIntervalsOverlapping, startOfToday } from 'date-fns';
 
-import type { BookingLite } from '@/utils/bookings';
+import type { BookingRangeLike } from '@/utils/bookings';
 import { bookingsToDisabledRanges } from '@/utils/bookings';
 
-// You can keep this here or import it once globally in main.tsx
 import 'react-day-picker/dist/style.css';
 
 type Props = {
-  bookings: BookingLite[];
+  bookings: BookingRangeLike[];
   selected: DateRange | undefined;
   onSelect: (range: DateRange | undefined) => void;
   numberOfMonths?: number;

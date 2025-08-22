@@ -1,27 +1,8 @@
-import type { ProfileLite } from '@/lib/api/bookings';
+import type { Media, ProfileLite, VenueLocation, VenueMeta } from '@/types/common';
 
 import { buildHeaders, getVenueByIdUrl, listVenuesUrl } from './constants';
 
-// if not already present:
-export type Media = { url: string; alt?: string };
-
-export type VenueLocation = {
-  address?: string;
-  city?: string;
-  zip?: string;
-  country?: string;
-  continent?: string;
-  lat?: number;
-  lng?: number;
-};
-
-export type VenueMeta = {
-  wifi?: boolean;
-  parking?: boolean;
-  breakfast?: boolean;
-  pets?: boolean;
-};
-
+// 👇 canonical booking shape for venues
 export type BookingLite = {
   id: string;
   dateFrom: string; // ISO
