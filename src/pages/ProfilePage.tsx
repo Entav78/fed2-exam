@@ -18,17 +18,18 @@ export default function ProfilePage() {
         </p>
       </header>
 
-      <div className="grid gap-8 md:grid-cols-2">
-        <div>
-          <h2 className="text-lg font-semibold mb-2">My bookings</h2>
+      <div className="grid gap-8">
+        {/* My bookings first so it's top on mobile and left on desktop */}
+        <section className="space-y-2">
+          <h2 className="text-lg font-semibold">My bookings</h2>
           <MyBookingsList />
-        </div>
+        </section>
 
         {isManager && (
-          <div>
+          <section className="space-y-2">
             <h2 className="text-lg font-semibold mb-2">My venues</h2>
             <MyVenuesList />
-          </div>
+          </section>
         )}
       </div>
     </section>

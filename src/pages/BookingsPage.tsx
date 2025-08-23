@@ -78,26 +78,46 @@ export default function BookingsPage() {
           {upcoming.length ? (
             <ul className="grid gap-3 sm:grid-cols-2">
               {upcoming.map((b) => (
-                <li key={b.id} className="rounded border border-border-light bg-card p-3">
-                  <div className="font-medium">
-                    {new Date(b.dateFrom).toLocaleDateString()} →{' '}
-                    {new Date(b.dateTo).toLocaleDateString()}
-                  </div>
-                  <div className="text-sm text-muted">Guests {b.guests}</div>
-                  {b.venue && (
-                    <div className="mt-1">
-                      <div className="font-semibold">{b.venue.name}</div>
-                      {b.venue.location?.city && (
-                        <div className="text-sm text-muted">{b.venue.location.city}</div>
-                      )}
-                    </div>
+                // inside Upcoming map
+                <li
+                  key={b.id}
+                  className="flex items-center gap-4 rounded border border-border-light bg-card p-3"
+                >
+                  {/* thumbnail */}
+                  {b.venue?.media?.[0]?.url ? (
+                    <img
+                      src={b.venue.media[0].url}
+                      alt={b.venue.media[0].alt || b.venue.name || 'Venue image'}
+                      className="h-16 w-16 rounded object-cover"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 rounded bg-muted" />
                   )}
-                  <div className="mt-2">
+
+                  {/* info */}
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium">
+                      {new Date(b.dateFrom).toLocaleDateString()} →{' '}
+                      {new Date(b.dateTo).toLocaleDateString()}
+                    </div>
+                    <div className="text-sm text-muted">Guests {b.guests}</div>
+                    {b.venue && (
+                      <div className="mt-1">
+                        <div className="font-semibold line-clamp-1">{b.venue.name}</div>
+                        {b.venue.location?.city && (
+                          <div className="text-sm text-muted">{b.venue.location.city}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* actions */}
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => cancel(b.id)}
                       disabled={busyId === b.id}
-                      className={`rounded border border-border-light px-3 py-1 ${
-                        busyId === b.id ? 'opacity-50 cursor-not-allowed' : ''
+                      className={`rounded border border-border-light px-3 py-1 text-sm ${
+                        busyId === b.id ? 'cursor-not-allowed opacity-50' : 'hover:bg-muted'
                       }`}
                     >
                       {busyId === b.id ? 'Cancelling…' : 'Cancel'}
@@ -116,21 +136,33 @@ export default function BookingsPage() {
               {past.map((b) => (
                 <li
                   key={b.id}
-                  className="rounded border border-border-light bg-card p-3 opacity-80"
+                  className="flex items-center gap-4 rounded border border-border-light bg-card p-3 opacity-80"
                 >
-                  <div className="font-medium">
-                    {new Date(b.dateFrom).toLocaleDateString()} →{' '}
-                    {new Date(b.dateTo).toLocaleDateString()}
-                  </div>
-                  <div className="text-sm text-muted">Guests {b.guests}</div>
-                  {b.venue && (
-                    <div className="mt-1">
-                      <div className="font-semibold">{b.venue.name}</div>
-                      {b.venue.location?.city && (
-                        <div className="text-sm text-muted">{b.venue.location.city}</div>
-                      )}
-                    </div>
+                  {b.venue?.media?.[0]?.url ? (
+                    <img
+                      src={b.venue.media[0].url}
+                      alt={b.venue.media[0].alt || b.venue.name || 'Venue image'}
+                      className="h-16 w-16 rounded object-cover"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 rounded bg-muted" />
                   )}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium">
+                      {new Date(b.dateFrom).toLocaleDateString()} →{' '}
+                      {new Date(b.dateTo).toLocaleDateString()}
+                    </div>
+                    <div className="text-sm text-muted">Guests {b.guests}</div>
+                    {b.venue && (
+                      <div className="mt-1">
+                        <div className="font-semibold line-clamp-1">{b.venue.name}</div>
+                        {b.venue.location?.city && (
+                          <div className="text-sm text-muted">{b.venue.location.city}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
