@@ -19,9 +19,8 @@ type FormState = {
   description: string;
   price: number | string;
   maxGuests: number | string;
-  // single image; mapped to media[] on submit
-  imageUrl: string;
-  imageAlt: string;
+  // ✅ multiple images
+  images: Array<{ url: string; alt: string }>;
 
   // amenities/meta
   wifi: boolean;
@@ -35,7 +34,7 @@ type FormState = {
   zip: string;
   country: string;
   continent: string;
-  lat: string; // keep as string in inputs; cast to number on submit
+  lat: string;
   lng: string;
 };
 
@@ -44,14 +43,12 @@ const emptyForm: FormState = {
   description: '',
   price: '',
   maxGuests: 1,
-  imageUrl: '',
-  imageAlt: '',
+  images: [{ url: '', alt: '' }], // start with one row
 
   wifi: false,
   parking: false,
   breakfast: false,
   pets: false,
-
   address: '',
   city: '',
   zip: '',
@@ -65,6 +62,7 @@ const emptyForm: FormState = {
 type BoolKey = 'wifi' | 'parking' | 'breakfast' | 'pets';
 
 export default function ManageVenuePage() {
+  const currentName = useAuthStore((s) => s.user?.name);
   const { id } = useParams<{ id: string }>();
   const editing = !!id;
   const navigate = useNavigate();
@@ -73,39 +71,66 @@ export default function ManageVenuePage() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(editing);
+  const [initial, setInitial] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!editing) return;
+    if (!editing) {
+      setInitial(JSON.stringify(emptyForm));
+      setForm(emptyForm);
+      return;
+    }
     (async () => {
       try {
         setLoading(true);
         const v = await getVenueById(id!, { owner: true, bookings: false });
-        setForm(fromVenueToForm(v));
+
+        if (v.owner?.name && currentName && v.owner.name !== currentName) {
+          toast.error('You can only edit your own venue');
+          navigate('/profile');
+          return;
+        }
+
+        const f = fromVenueToForm(v);
+        setForm(f);
+        setInitial(JSON.stringify(f)); // ✅ snapshot here
       } catch (e) {
         toast.error((e as Error).message ?? 'Could not load venue');
       } finally {
         setLoading(false);
       }
     })();
-  }, [editing, id]);
+  }, [editing, id, currentName, navigate]);
+
+  const dirty = initial !== null && JSON.stringify(form) !== initial;
+
+  // ✅ separate effect just for beforeunload
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!dirty) return;
+      e.preventDefault();
+      e.returnValue = ''; // required for some browsers
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [dirty]);
 
   if (!isManager) return <p className="text-danger">Managers only.</p>;
   if (loading) return <p>Loading…</p>;
 
   function fromVenueToForm(v: Venue): FormState {
+    const imgs = (v.media ?? [])
+      .map((m) => ({ url: m?.url ?? '', alt: m?.alt ?? '' }))
+      .slice(0, 12);
     return {
       name: v.name ?? '',
       description: v.description ?? '',
       price: v.price ?? '',
       maxGuests: v.maxGuests ?? 1,
-      imageUrl: v.media?.[0]?.url ?? '',
-      imageAlt: v.media?.[0]?.alt ?? '',
-
+      images: imgs.length ? imgs : [{ url: '', alt: '' }],
       wifi: !!v.meta?.wifi,
       parking: !!v.meta?.parking,
       breakfast: !!v.meta?.breakfast,
       pets: !!v.meta?.pets,
-
       address: v.location?.address ?? '',
       city: v.location?.city ?? '',
       zip: v.location?.zip ?? '',
@@ -117,9 +142,9 @@ export default function ManageVenuePage() {
   }
 
   function toVenueInput(f: FormState): VenueInput {
-    const media = f.imageUrl
-      ? [{ url: f.imageUrl.trim(), alt: f.imageAlt.trim() || f.name.trim() }]
-      : [];
+    const media = f.images
+      .map(({ url, alt }) => ({ url: url.trim(), alt: alt.trim() }))
+      .filter((m) => m.url && /^https?:\/\//i.test(m.url)); // keep http(s) only
 
     const location = {
       address: f.address.trim() || undefined,
@@ -137,12 +162,7 @@ export default function ManageVenuePage() {
       price: Number(f.price) || 0,
       maxGuests: Number(f.maxGuests) || 1,
       media,
-      meta: {
-        wifi: f.wifi,
-        parking: f.parking,
-        breakfast: f.breakfast,
-        pets: f.pets,
-      },
+      meta: { wifi: f.wifi, parking: f.parking, breakfast: f.breakfast, pets: f.pets },
       location,
     };
   }
@@ -161,16 +181,71 @@ export default function ManageVenuePage() {
     };
   }
 
+  function onImageField(i: number, key: 'url' | 'alt') {
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.currentTarget.value;
+      setForm((s) => {
+        const images = s.images.slice();
+        images[i] = { ...images[i], [key]: val };
+        return { ...s, images };
+      });
+    };
+  }
+  function addImageRow() {
+    setForm((s) => ({ ...s, images: [...s.images, { url: '', alt: '' }] }));
+  }
+  function removeImageRow(i: number) {
+    setForm((s) => {
+      const images = s.images.slice();
+      images.splice(i, 1);
+      return { ...s, images: images.length ? images : [{ url: '', alt: '' }] };
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim()) return toast.error('Name is required');
 
+    // Validate images (optional: require http(s) if provided)
+    const bad = form.images.find((img) => img.url.trim() && !/^https?:\/\//i.test(img.url.trim()));
+    if (bad) return toast.error('All image URLs must start with http(s)');
+
+    // Lat/Lng validation (both or neither; numeric; within range)
+    const hasLat = form.lat.trim() !== '';
+    const hasLng = form.lng.trim() !== '';
+    if (hasLat !== hasLng) {
+      return toast.error('Please provide both latitude and longitude (or neither).');
+    }
+    if (hasLat && hasLng) {
+      const lat = Number(form.lat),
+        lng = Number(form.lng);
+      if (Number.isNaN(lat) || Number.isNaN(lng)) {
+        return toast.error('Latitude and Longitude must be numbers.');
+      }
+      if (lat < -90 || lat > 90) return toast.error('Latitude must be between -90 and 90.');
+      if (lng < -180 || lng > 180) return toast.error('Longitude must be between -180 and 180.');
+    }
+
     setBusy(true);
     try {
-      const payload = toVenueInput(form);
-      const saved = editing ? await updateVenue(id!, payload) : await createVenue(payload);
+      const payload = toVenueInput(form); // images[] -> media[]
+      if (!editing && (!payload.media || payload.media.length === 0)) {
+        setBusy(false);
+        return toast.error('Please add at least one image URL.');
+      }
+
       toast.success(editing ? 'Venue updated' : 'Venue created');
-      navigate(`/venues/${saved.id}`);
+
+      if (editing) {
+        await updateVenue(id!, payload);
+        toast.success('Venue updated');
+        setInitial(JSON.stringify(form));
+      } else {
+        await createVenue(payload);
+        toast.success('Venue created');
+        setForm(emptyForm);
+        setInitial(JSON.stringify(emptyForm));
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Save failed');
     } finally {
@@ -192,6 +267,9 @@ export default function ManageVenuePage() {
       setBusy(false);
     }
   }
+
+  const hasValidImage = form.images.some((i) => /^https?:\/\//i.test(i.url.trim()));
+  const canSubmit = !busy && !!form.name.trim() && (editing || hasValidImage);
 
   return (
     <section className="mx-auto max-w-2xl p-4">
@@ -255,32 +333,52 @@ export default function ManageVenuePage() {
           </div>
         </div>
 
-        {/* Image */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="form-label" htmlFor="imageUrl">
-              Image URL
-            </label>
-            <input
-              id="imageUrl"
-              className="input-field"
-              value={form.imageUrl}
-              onChange={onField('imageUrl')}
-              placeholder="https://…"
-            />
+        {/* Images */}
+        <fieldset className="rounded border border-border-light p-3">
+          <legend className="text-sm font-semibold">Images</legend>
+
+          <div className="space-y-3">
+            {form.images.map((img, i) => (
+              <div key={i} className="grid gap-3 sm:grid-cols-2">
+                <input
+                  className="input-field"
+                  placeholder="Image URL (https://...)"
+                  value={img.url}
+                  onChange={onImageField(i, 'url')}
+                />
+                <div className="flex gap-2">
+                  <input
+                    className="input-field flex-1"
+                    placeholder="Alt text"
+                    value={img.alt}
+                    onChange={onImageField(i, 'alt')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImageRow(i)}
+                    className="rounded border border-border-light px-3 py-1 text-sm"
+                    aria-label={`Remove image ${i + 1}`}
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-          <div>
-            <label className="form-label" htmlFor="imageAlt">
-              Image alt
-            </label>
-            <input
-              id="imageAlt"
-              className="input-field"
-              value={form.imageAlt}
-              onChange={onField('imageAlt')}
-            />
+
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={addImageRow}
+              disabled={form.images.length >= 12}
+              className={`rounded border border-border-light px-3 py-1 text-sm ${
+                form.images.length >= 12 ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              + Add image
+            </button>
           </div>
-        </div>
+        </fieldset>
 
         {/* Amenities */}
         <fieldset className="rounded border border-border-light p-3">
@@ -337,12 +435,20 @@ export default function ManageVenuePage() {
               onChange={onField('continent')}
             />
             <input
+              id="lat"
+              type="number"
+              step="any"
+              inputMode="decimal"
               className="input-field"
               placeholder="Lat"
               value={form.lat}
               onChange={onField('lat')}
             />
             <input
+              id="lng"
+              type="number"
+              step="any"
+              inputMode="decimal"
               className="input-field"
               placeholder="Lng"
               value={form.lng}
@@ -362,7 +468,7 @@ export default function ManageVenuePage() {
               {busy ? 'Deleting…' : 'Delete'}
             </Button>
           )}
-          <Button type="submit" disabled={busy}>
+          <Button type="submit" disabled={!canSubmit}>
             {busy ? (editing ? 'Saving…' : 'Creating…') : editing ? 'Save changes' : 'Create venue'}
           </Button>
         </div>
