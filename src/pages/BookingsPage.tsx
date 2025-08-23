@@ -46,14 +46,17 @@ export default function BookingsPage() {
   }, [rows]);
 
   async function cancel(id: string) {
+    if (!confirm('Are you sure you want to cancel this booking?')) return;
     const prev = rows;
     setBusyId(id);
     setRows((r) => r.filter((b) => b.id !== id)); // optimistic
     try {
       await deleteBooking(id);
+      const fresh = await getMyBookings(user!.name, true);
+      setRows(fresh.sort(byDateFromAsc));
       toast.success('Booking cancelled');
     } catch (e) {
-      setRows(prev); // rollback
+      setRows(prev);
       toast.error((e as Error).message ?? 'Could not cancel booking');
     } finally {
       setBusyId(null);

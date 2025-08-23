@@ -132,7 +132,22 @@ export async function createBooking(body: CreateBookingInput): Promise<Booking> 
 /** Delete a booking (owner/customer can cancel their own) */
 export async function deleteBooking(id: string): Promise<void> {
   const url = getBookingByIdUrl(id);
-  await getJSON<void>(url, { method: 'DELETE' });
+  const res = await fetch(url, {
+    method: 'DELETE',
+    headers: buildHeaders('DELETE'),
+  });
+
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try {
+      const j = await res.json();
+      msg = j?.errors?.[0]?.message ?? j?.message ?? msg;
+    } catch {
+      /* body might be empty on error too */
+    }
+    throw new Error(msg);
+  }
+  // Success returns 204 No Content — do NOT parse JSON here.
 }
 
 // --- “My bookings” helper (for /bookings page) ---

@@ -38,6 +38,7 @@ export default function MyBookingsList() {
   const hasData = rows.length > 0;
 
   async function cancel(id: string) {
+    if (!confirm('Cancel this booking?')) return;
     const prev = rows;
     setBusyId(id);
     setRows((r) => r.filter((b) => b.id !== id)); // optimistic
@@ -46,7 +47,7 @@ export default function MyBookingsList() {
       toast.success('Booking cancelled');
     } catch (e) {
       setRows(prev); // rollback
-      toast.error((e as Error).message ?? 'Could not cancel booking');
+      toast.error(e instanceof Error ? e.message : 'Could not cancel booking');
     } finally {
       setBusyId(null);
     }
@@ -91,12 +92,15 @@ export default function MyBookingsList() {
 
             {/* actions */}
             <div className="flex items-center gap-2">
-              <Link
-                to={`/venues/${b.venue?.id ?? ''}`}
-                className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
-              >
-                Open
-              </Link>
+              {b.venue?.id ? (
+                <Link
+                  to={`/venues/${b.venue.id}`}
+                  className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
+                >
+                  Open
+                </Link>
+              ) : null}
+
               {!isPast(b) && (
                 <button
                   onClick={() => cancel(b.id)}
