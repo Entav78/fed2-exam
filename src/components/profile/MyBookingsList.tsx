@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Link } from 'react-router-dom';
 
+//import { Link } from 'react-router-dom';
+import BookingCard from '@/components/bookings/BookingCard';
 import { type Booking, deleteBooking, getMyBookings } from '@/lib/api/bookings';
 import { useAuthStore } from '@/store/authStore';
 
@@ -32,9 +33,6 @@ export default function MyBookingsList() {
     })();
   }, [user?.name]);
 
-  const now = new Date();
-  const isPast = (b: Booking) => new Date(b.dateTo).getTime() < now.getTime();
-
   const hasData = rows.length > 0;
 
   async function cancel(id: string) {
@@ -58,64 +56,18 @@ export default function MyBookingsList() {
   if (!hasData) return <p className="text-sm text-muted">You haven’t made any bookings yet.</p>;
 
   return (
-    <div className="space-y-4">
-      {rows.map((b) => {
-        const img = b.venue?.media?.[0];
-        const city = b.venue?.location?.city;
-        return (
-          <div
-            key={b.id}
-            className={`flex items-center gap-4 rounded border border-border-light bg-card p-4 shadow ${
-              isPast(b) ? 'opacity-80' : ''
-            }`}
-          >
-            {/* thumbnail */}
-            {img?.url ? (
-              <img
-                src={img.url}
-                alt={img.alt || b.venue?.name || 'Venue image'}
-                className="h-16 w-16 rounded object-cover"
-              />
-            ) : (
-              <div className="h-16 w-16 rounded bg-muted" />
-            )}
-
-            {/* info */}
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold leading-tight line-clamp-1">{b.venue?.name ?? 'Venue'}</p>
-              {city && <p className="text-sm text-muted">{city}</p>}
-              <p className="mt-1 text-sm">
-                {new Date(b.dateFrom).toLocaleDateString()} →{' '}
-                {new Date(b.dateTo).toLocaleDateString()} • Guests {b.guests}
-              </p>
-            </div>
-
-            {/* actions */}
-            <div className="flex items-center gap-2">
-              {b.venue?.id ? (
-                <Link
-                  to={`/venues/${b.venue.id}`}
-                  className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
-                >
-                  Open
-                </Link>
-              ) : null}
-
-              {!isPast(b) && (
-                <button
-                  onClick={() => cancel(b.id)}
-                  disabled={busyId === b.id}
-                  className={`rounded border border-border-light px-3 py-1 text-sm ${
-                    busyId === b.id ? 'cursor-not-allowed opacity-50' : 'hover:bg-muted'
-                  }`}
-                >
-                  {busyId === b.id ? 'Cancelling…' : 'Cancel'}
-                </button>
-              )}
-            </div>
-          </div>
-        );
-      })}
+    <div className="grid gap-4 md:grid-cols-2">
+      {rows.map((b) => (
+        <BookingCard
+          key={b.id}
+          booking={b}
+          onCancel={(id) => {
+            if (!confirm('Are you sure you want to cancel this booking?')) return;
+            cancel(id);
+          }}
+          busy={busyId === b.id}
+        />
+      ))}
     </div>
   );
 }
