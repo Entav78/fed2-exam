@@ -53,6 +53,18 @@ export default {
         darkCard: '#2d2d2d',
       },
     },
+    container: {
+      center: true,
+      padding: {
+        DEFAULT: '1rem', // ~16px
+        sm: '1rem',
+        md: '1.5rem',
+        lg: '2rem',
+      },
+      screens: {
+        '2xl': '72rem', // ≈ 1152px max content width (tweak as you like)
+      },
+    },
   },
   plugins: [],
 };

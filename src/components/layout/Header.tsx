@@ -27,8 +27,8 @@ export default function Header() {
   const menuLink = 'block w-full text-left px-4 py-2 hover:underline transition';
 
   return (
-    <header className="bg-header text-white px-4 py-4 shadow-md sticky top-0 z-50">
-      <div className="relative container mx-auto flex w-full items-center justify-between">
+    <header className="bg-header text-text-soft px-4 py-4 shadow-md sticky top-0 z-50">
+      <div className="relative container flex w-full items-center justify-between">
         {/* Logo (swap text for <img …> when you add one) */}
         <div className="hidden sm:block">
           <Link to="/" className="group flex items-center text-lg font-bold">
@@ -53,7 +53,7 @@ export default function Header() {
         >
           {/* open icon */}
           <svg
-            className={`h-8 w-8 transform text-white transition-all duration-300 ${
+            className={`h-8 w-8 transform text-current transition-all duration-300 ${
               menuOpen ? 'scale-75 opacity-0' : 'scale-125 opacity-100'
             }`}
             viewBox="0 0 24 24"
@@ -69,7 +69,7 @@ export default function Header() {
           </svg>
           {/* close icon */}
           <svg
-            className={`h-8 w-8 transform text-white transition-all duration-300 ${
+            className={`h-8 w-8 transform text-current transition-all duration-300 ${
               menuOpen ? 'scale-125 opacity-100' : 'scale-90 opacity-0'
             }`}
             viewBox="0 0 24 24"
@@ -138,7 +138,7 @@ export default function Header() {
 
       {/* Logged-in hint (desktop only) */}
       {isLoggedIn && displayName && (
-        <div className="container mt-1 hidden justify-end text-sm text-white/70 sm:flex">
+        <div className="container mt-1 hidden justify-end text-sm text-text-subtle sm:flex">
           Logged in as <span className="ml-1 font-semibold">{displayName}</span>
           <span className="ml-2 opacity-70">({isManager ? 'Manager' : 'Customer'})</span>
         </div>
@@ -147,11 +147,11 @@ export default function Header() {
       {/* Mobile menu */}
       <div
         id="mobile-menu"
-        className={`fixed right-0 top-0 z-50 h-full w-full transform bg-header text-white shadow-lg transition-transform duration-300 sm:hidden ${
+        className={`fixed right-0 top-0 z-50 h-full w-full transform bg-header text-text-soft shadow-lg transition-transform duration-300 sm:hidden ${
           menuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between border-b border-white px-4 pb-4 pt-6">
+        <div className="flex items-center justify-between border-b border-text-soft/30 px-4 pb-4 pt-6">
           <span className="text-lg font-semibold">Menu</span>
           <button onClick={() => setMenuOpen(false)} aria-label="Close menu">
             <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor">

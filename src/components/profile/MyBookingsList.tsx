@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
-//import { Link } from 'react-router-dom';
 import BookingCard from '@/components/bookings/BookingCard';
 import { type Booking, deleteBooking, getMyBookings } from '@/lib/api/bookings';
 import { useAuthStore } from '@/store/authStore';
@@ -33,10 +33,11 @@ export default function MyBookingsList() {
     })();
   }, [user?.name]);
 
-  const hasData = rows.length > 0;
+  const LIMIT = 4;
+  const visible = rows.slice(0, LIMIT);
 
   async function cancel(id: string) {
-    if (!confirm('Cancel this booking?')) return;
+    if (!confirm('Are you sure you want to cancel this booking?')) return;
     const prev = rows;
     setBusyId(id);
     setRows((r) => r.filter((b) => b.id !== id)); // optimistic
@@ -53,21 +54,26 @@ export default function MyBookingsList() {
 
   if (loading) return <p className="text-sm text-muted">Loading bookings…</p>;
   if (error) return <p className="text-danger text-sm">Error: {error}</p>;
-  if (!hasData) return <p className="text-sm text-muted">You haven’t made any bookings yet.</p>;
+  if (!rows.length) return <p className="text-sm text-muted">You haven’t made any bookings yet.</p>;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {rows.map((b) => (
-        <BookingCard
-          key={b.id}
-          booking={b}
-          onCancel={(id) => {
-            if (!confirm('Are you sure you want to cancel this booking?')) return;
-            cancel(id);
-          }}
-          busy={busyId === b.id}
-        />
-      ))}
-    </div>
+    <>
+      <div className="grid gap-4 md:grid-cols-2">
+        {visible.map((b) => (
+          <BookingCard key={b.id} booking={b} onCancel={cancel} busy={busyId === b.id} />
+        ))}
+      </div>
+
+      {rows.length > LIMIT && (
+        <div className="mt-3">
+          <Link
+            to="/bookings"
+            className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
+          >
+            View all bookings
+          </Link>
+        </div>
+      )}
+    </>
   );
 }

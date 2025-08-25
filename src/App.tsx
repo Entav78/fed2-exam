@@ -25,9 +25,11 @@ export default function App() {
         Skip to content
       </a>
       <Header />
+      {/* container provides centered max-width + padding */}
       <main id="main" className="container py-6">
         <Outlet />
       </main>
+
       <Footer />
       <Toaster position="top-center" toastOptions={{ duration: 2500 }} />
     </div>

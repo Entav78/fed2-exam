@@ -6,11 +6,14 @@ import { API_PROFILES, buildHeaders } from '@/lib/api/constants';
 import type { Venue } from '@/lib/api/venues';
 import { useAuthStore } from '@/store/authStore';
 
+import NewVenueTile from '../venues/NewVenueTile';
+
 export default function MyVenuesList() {
   const user = useAuthStore((s) => s.user);
   const [rows, setRows] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     if (!user?.name) return;
@@ -37,18 +40,28 @@ export default function MyVenuesList() {
   if (!rows.length)
     return <p className="text-sm text-muted">You haven’t created any venues yet.</p>;
 
+  const LIMIT = 3;
+  const visible = expanded ? rows : rows.slice(0, LIMIT);
+
   return (
-    // 1 column by default, 2 columns from md breakpoint and up
-    <div className="grid gap-4 md:grid-cols-2">
-      {rows.map((v) => (
-        <VenueCard
-          key={v.id}
-          venue={v}
-          layout="row" // ← compact horizontal card
-          showManage
-          className="h-full" // keep buttons aligned at the bottom when content wraps
-        />
-      ))}
-    </div>
+    <>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {visible.map((v) => (
+          <VenueCard key={v.id} venue={v} layout="row" showManage />
+        ))}
+        <NewVenueTile />
+      </div>
+
+      {rows.length > LIMIT && (
+        <div className="mt-3">
+          <button
+            onClick={() => setExpanded((s) => !s)}
+            className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
+          >
+            {expanded ? 'Show fewer' : `Show all (${rows.length})`}
+          </button>
+        </div>
+      )}
+    </>
   );
 }

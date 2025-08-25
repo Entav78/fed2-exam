@@ -1,8 +1,8 @@
 const Footer = () => {
   const year = new Date().getFullYear();
   return (
-    <footer className="bg-header text-white py-4 text-center text-sm">
-      © {year} Holidaze. All rights reserved.
+    <footer className="bg-header text-text-soft py-6">
+      <div className="container text-sm opacity-80">© {year} Holidaze. All rights reserved.</div>
     </footer>
   );
 };
