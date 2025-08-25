@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+import type { Media } from '@/types/common';
+
 type Role = 'visitor' | 'customer' | 'manager';
 
 export type AuthUser = {
@@ -8,6 +10,8 @@ export type AuthUser = {
   email: string;
   venueManager?: boolean;
   avatarUrl?: string | null;
+  avatar?: Media;
+  banner?: Media;
 };
 
 type AuthState = {

@@ -62,50 +62,55 @@ const LoginPage = () => {
         throw new Error('Invalid login response');
       }
 
-      // optional: mirror token for buildHeaders()
+      // 1) Make the token available to buildHeaders()
       try {
         localStorage.setItem('token', d.accessToken);
       } catch {
         /* ignore */
       }
 
-      // send venueManager to the store so the header can show (Manager)
+      const meUrl = `${API_PROFILES}/${encodeURIComponent(d.name)}`;
+      const meRes = await fetch(meUrl, { headers: buildHeaders() });
+      if (!meRes.ok) {
+        const j = await meRes.json().catch(() => ({}));
+        const msg = j?.errors?.[0]?.message ?? j?.message ?? 'Could not load profile';
+        throw new Error(msg);
+      }
+      const meJson = await meRes.json().catch(() => ({}));
+      const me = meJson?.data as
+        | {
+            name: string;
+            email: string;
+            venueManager?: boolean;
+            avatar?: { url?: string } | null;
+            banner?: { url?: string } | null;
+          }
+        | undefined;
+
+      if (!me?.name || !me?.email) {
+        throw new Error('Profile response missing required fields');
+      }
+
+      // 3) Put canonical profile into the store
       login({
-        name: d.name,
-        email: d.email,
-        accessToken: d.accessToken,
-        venueManager: !!d.venueManager,
-        // include this only if your store's login signature accepts it:
-        avatarUrl: d.avatar?.url ?? null,
+        name: me.name,
+        email: me.email,
+        accessToken: d.accessToken, // keep token from auth call
+        venueManager: !!me.venueManager,
+        avatarUrl: me.avatar?.url ?? null, // legacy field your UI already uses
       });
 
-      await refreshVenueManager(d.name, d.accessToken);
+      // 4) Keep your venueManager refresh/enabling logic
+      await refreshVenueManager(me.name, d.accessToken);
 
       // If still false but email is stud.noroff.no, try to enable it
-      const isStud = /@stud\.noroff\.no$/i.test(d.email);
+      const isStud = /@stud\.noroff\.no$/i.test(me.email);
       const current = useAuthStore.getState().user?.venueManager;
-
       if (isStud && current === false) {
-        const ok = await setVenueManager(d.name, true, d.accessToken);
+        const ok = await setVenueManager(me.name, true, d.accessToken);
         if (ok) {
           useAuthStore.setState((s) => (s.user ? { user: { ...s.user, venueManager: true } } : s));
         }
-      }
-
-      try {
-        const url = `${API_PROFILES}/${encodeURIComponent(d.name)}`;
-        const profRes = await fetch(url, { headers: buildHeaders() });
-        const prof = (await profRes.json().catch(() => ({}))) as {
-          data?: { venueManager?: boolean };
-        };
-
-        if (prof?.data?.venueManager !== undefined) {
-          useAuthStore.setState((s) => ({
-            user: { ...s.user!, venueManager: !!prof.data!.venueManager },
-          }));
-        }
-      } catch {
-        /* ignore profile fetch issues */
       }
 
       toast.success('Logged in successfully!');

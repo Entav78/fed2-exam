@@ -1,11 +1,17 @@
 // src/lib/api/profiles.ts
 import { API_PROFILES, buildHeaders } from '@/lib/api/constants';
 import { useAuthStore } from '@/store/authStore';
+import type { Media, ProfileLite } from '@/types/common';
 
 type ProfileResponse = {
   data?: {
     venueManager?: boolean;
   };
+};
+
+type UpdateProfileMediaBody = {
+  avatar?: Media | null;
+  banner?: Media | null;
 };
 
 /** Fetches /profiles/:name and updates the store's venueManager flag (best-effort). */
@@ -48,4 +54,28 @@ export async function setVenueManager(
 
   const j = (await res.json().catch(() => ({}))) as ProfileResponse;
   return !!j?.data?.venueManager;
+}
+
+export async function updateProfileMedia(
+  profileName: string,
+  body: UpdateProfileMediaBody,
+): Promise<Pick<ProfileLite, 'avatar' | 'banner'>> {
+  const url = `${API_PROFILES}/${encodeURIComponent(profileName)}`;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: buildHeaders('PUT'),
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try {
+      const j = await res.json();
+      msg = j?.errors?.[0]?.message ?? j?.message ?? msg;
+    } catch {}
+    throw new Error(msg);
+  }
+
+  const json = await res.json();
+  return json.data;
 }

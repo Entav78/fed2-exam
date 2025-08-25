@@ -1,6 +1,7 @@
 // src/pages/ProfilePage.tsx
 import MyBookingsList from '@/components/profile/MyBookingsList';
 import MyVenuesList from '@/components/profile/MyVenuesList';
+import ProfileMediaEditor from '@/components/profile/ProfileMediaEditor';
 import { useAuthStore } from '@/store/authStore';
 
 export default function ProfilePage() {
@@ -19,6 +20,9 @@ export default function ProfilePage() {
           {user.name} • {user.email} • {isManager ? 'manager' : 'customer'}
         </p>
       </header>
+
+      {/* profile header card */}
+      <ProfileMediaEditor />
 
       {/* My bookings */}
       <div>
