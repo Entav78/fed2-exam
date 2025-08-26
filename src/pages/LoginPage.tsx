@@ -101,13 +101,13 @@ const LoginPage = () => {
       });
 
       // 4) Keep your venueManager refresh/enabling logic
-      await refreshVenueManager(me.name, d.accessToken);
+      await refreshVenueManager(me.name);
 
       // If still false but email is stud.noroff.no, try to enable it
       const isStud = /@stud\.noroff\.no$/i.test(me.email);
       const current = useAuthStore.getState().user?.venueManager;
       if (isStud && current === false) {
-        const ok = await setVenueManager(me.name, true, d.accessToken);
+        const ok = await setVenueManager(me.name, true);
         if (ok) {
           useAuthStore.setState((s) => (s.user ? { user: { ...s.user, venueManager: true } } : s));
         }

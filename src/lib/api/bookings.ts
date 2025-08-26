@@ -1,4 +1,3 @@
-// (If you used VenueLocation/VenueMeta here too, import them the same way)
 import {
   API_PROFILES,
   buildHeaders,
@@ -6,6 +5,8 @@ import {
   listBookingsUrl,
 } from '@/lib/api/constants';
 import type { Media, ProfileLite, VenueLocation, VenueMeta } from '@/types/common';
+
+// ---------- Types ----------
 
 export type VenueLite = {
   id: string;
@@ -22,8 +23,6 @@ export type VenueLite = {
   owner?: ProfileLite;
 };
 
-// --- Booking types ---
-
 export type BookingBase = {
   id: string;
   dateFrom: string; // ISO
@@ -33,57 +32,64 @@ export type BookingBase = {
   updated?: string; // ISO
 };
 
-/**
- * When you request expansions with `_venue=true` and/or `_customer=true`,
- * these fields will be included by the API.
- */
 export type Booking = BookingBase & {
+  /** present if requested with _venue=true */
   venue?: VenueLite;
+  /** present if requested with _customer=true */
   customer?: ProfileLite;
 };
 
-// Optional: a small alias so we don’t inline this shape everywhere
-export type BookingInput = Pick<BookingBase, 'dateFrom' | 'dateTo' | 'guests'> & {
+/** Input you accept from UI */
+export type CreateBookingInput = { dateFrom: string; dateTo: string; guests: number } & (
+  | { venueId: string }
+  | { venue: { id: string } }
+);
+
+/** Payload actually sent to the API */
+type CreateBookingPayload = {
+  dateFrom: string;
+  dateTo: string;
+  guests: number;
   venueId: string;
 };
 
-// --- Internal helper ---
+// ---------- Internal JSON helper ----------
 
-// in src/lib/api/bookings.ts
-async function getJSON<T>(url: string, init?: RequestInit): Promise<T> {
-  const method = (init?.method ?? 'GET').toString().toUpperCase();
+async function getJSON<T>(url: string, init: RequestInit = {}): Promise<T> {
+  const method = (init.method ?? 'GET').toString().toUpperCase();
 
-  const res = await fetch(url, {
-    ...init,
-    headers: {
-      ...buildHeaders(method), // ← ensures Content-Type for POST/PUT/PATCH
-      ...(init?.headers as Record<string, string> | undefined),
-    },
-  });
+  const headers: Record<string, string> = {
+    ...buildHeaders(), // ✅ no method string here
+    ...(init.headers as Record<string, string> | undefined),
+  };
+
+  // Add Content-Type only when the request has a body
+  if (method !== 'GET' && method !== 'HEAD') {
+    headers['Content-Type'] = headers['Content-Type'] ?? 'application/json';
+  }
+
+  const res = await fetch(url, { ...init, headers });
 
   if (!res.ok) {
     let msg = `HTTP ${res.status}`;
     try {
       const j = await res.json();
       msg = j?.errors?.[0]?.message ?? j?.message ?? msg;
-    } catch {}
+    } catch {
+      /* response may be empty */
+    }
     throw new Error(msg);
   }
+
+  // Most endpoints return JSON (204 handled by callers where applicable)
   return res.json() as Promise<T>;
 }
 
-// --- API: list & detail ---
+// ---------- API ----------
 
-/** Get all bookings (use params to expand venue/customer and to page/sort) */
-export async function fetchBookings(params?: {
-  page?: number;
-  limit?: number;
-  sort?: 'dateFrom' | 'dateTo' | 'created' | 'updated' | 'guests';
-  sortOrder?: 'asc' | 'desc';
-  venue?: boolean; // include venue object
-  customer?: boolean; // include customer object
-}): Promise<Booking[]> {
-  const url = listBookingsUrl(params);
+/** List bookings (client-side paging/sorting done elsewhere) */
+export async function fetchBookings(): Promise<Booking[]> {
+  const url = listBookingsUrl();
   const json = await getJSON<{ data: Booking[] }>(url);
   return json.data;
 }
@@ -98,33 +104,24 @@ export async function getBookingById(
   return json.data;
 }
 
-// NOTE: some Holidaze variants require `venueId`; others accept `venue: { id }`.
-// I send both for compatibility.
-
-type CreateBookingInput = {
-  dateFrom: string; // YYYY-MM-DD
-  dateTo: string; // YYYY-MM-DD
-  guests: number;
-} & ({ venueId: string } | { venue: { id: string } });
-
+/** Create a booking (normalizes to venueId and sends both styles for compatibility) */
 export async function createBooking(body: CreateBookingInput): Promise<Booking> {
   const url = listBookingsUrl();
 
   // normalize to an id either way
   const id = 'venueId' in body ? body.venueId : body.venue.id;
 
-  const payload = {
+  const payload: CreateBookingPayload = {
     dateFrom: body.dateFrom,
     dateTo: body.dateTo,
     guests: body.guests,
-    venueId: id, // <- required by your backend
-    venue: { id }, // <- harmless if ignored, useful on other variants
+    venueId: id, // required by the backend
+    // NOTE: we also send venue:{id} in some variants; harmless if ignored
   };
 
   const json = await getJSON<{ data: Booking }>(url, {
     method: 'POST',
-    headers: buildHeaders('POST'), // now guaranteed Content-Type: application/json
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, venue: { id } }),
   });
   return json.data;
 }
@@ -134,7 +131,7 @@ export async function deleteBooking(id: string): Promise<void> {
   const url = getBookingByIdUrl(id);
   const res = await fetch(url, {
     method: 'DELETE',
-    headers: buildHeaders('DELETE'),
+    headers: buildHeaders(), // ✅ no method string here
   });
 
   if (!res.ok) {
@@ -143,25 +140,25 @@ export async function deleteBooking(id: string): Promise<void> {
       const j = await res.json();
       msg = j?.errors?.[0]?.message ?? j?.message ?? msg;
     } catch {
-      /* body might be empty on error too */
+      /* body might be empty on error */
     }
     throw new Error(msg);
   }
-  // Success returns 204 No Content — do NOT parse JSON here.
+  // success is 204 No Content — do NOT parse JSON
 }
 
-// --- “My bookings” helper (for /bookings page) ---
-
-export async function getMyBookings(profileName: string, withVenue = true) {
+/** Convenience for Profile -> "My bookings" */
+export async function getMyBookings(profileName: string, withVenue = true): Promise<Booking[]> {
   const qs = new URLSearchParams();
   if (withVenue) qs.set('_venue', 'true');
-  const url = `${API_PROFILES}/${encodeURIComponent(profileName)}/bookings?${qs}`;
+  const url = `${API_PROFILES}/${encodeURIComponent(profileName)}/bookings?${qs.toString()}`;
   const json = await getJSON<{ data: Booking[] }>(url);
   return json.data;
 }
 
-// Small helper you might like in UI
-export function isBookingActive(b: BookingBase, now = new Date()) {
+// ---------- Small UI helper ----------
+
+export function isBookingActive(b: BookingBase, now = new Date()): boolean {
   const start = new Date(b.dateFrom).getTime();
   const end = new Date(b.dateTo).getTime();
   const t = now.getTime();

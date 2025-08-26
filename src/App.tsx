@@ -11,7 +11,7 @@ export default function App() {
   useEffect(() => {
     const { user, accessToken } = useAuthStore.getState();
     if (user?.name && accessToken) {
-      refreshVenueManager(user.name, accessToken).catch(() => {});
+      refreshVenueManager(user.name).catch(() => {});
     }
   }, []);
 

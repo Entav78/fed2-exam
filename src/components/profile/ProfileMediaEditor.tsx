@@ -3,9 +3,8 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { Button } from '@/components/ui/Button';
-import { updateProfileMedia } from '@/lib/api/profiles';
+import { updateProfileMedia, type UpdateProfileMediaBody } from '@/lib/api/profiles';
 import { useAuthStore } from '@/store/authStore';
-import type { Media } from '@/types/common';
 
 type Form = {
   avatarUrl: string;
@@ -14,15 +13,10 @@ type Form = {
   bannerAlt: string;
 };
 
-function isHttp(url: string) {
-  return /^https?:\/\//i.test(url.trim());
-}
-
 export default function ProfileMediaEditor() {
   const user = useAuthStore((s) => s.user);
   const [busy, setBusy] = useState(false);
 
-  // Prefill from current user (defensive: optional chaining)
   const [form, setForm] = useState<Form>({
     avatarUrl: user?.avatar?.url ?? '',
     avatarAlt: user?.avatar?.alt ?? '',
@@ -30,49 +24,76 @@ export default function ProfileMediaEditor() {
     bannerAlt: user?.banner?.alt ?? '',
   });
 
-  if (!user?.name) return null;
+  const [initial, setInitial] = useState(() => JSON.stringify(form));
+  const dirty = JSON.stringify(form) !== initial;
 
-  const on = (key: keyof Form) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((s) => ({ ...s, [key]: e.currentTarget.value }));
+  if (!user) return null;
+
+  // put this inside ProfileMediaEditor()
+  const on = (key: keyof Form) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    // robust read, even if the synthetic event gets nulled
+    const val = ((e.target as HTMLInputElement | null)?.value ?? '').toString();
+    setForm((s) => ({ ...s, [key]: val }));
+  };
 
   async function save() {
-    // validate (allow empty, but if provided must be http(s))
-    if (form.avatarUrl && !isHttp(form.avatarUrl)) {
-      return toast.error('Avatar URL must start with http(s)');
-    }
-    if (form.bannerUrl && !isHttp(form.bannerUrl)) {
-      return toast.error('Banner URL must start with http(s)');
+    const name = user?.name;
+    if (!name) {
+      toast.error('You must be logged in');
+      return;
     }
 
-    const avatar: Media | null = form.avatarUrl
-      ? { url: form.avatarUrl.trim(), alt: form.avatarAlt.trim() }
-      : null;
+    // URL validation
+    if (form.avatarUrl && !/^https?:\/\//i.test(form.avatarUrl.trim())) {
+      toast.error('Avatar URL must start with http(s)');
+      return;
+    }
+    if (form.bannerUrl && !/^https?:\/\//i.test(form.bannerUrl.trim())) {
+      toast.error('Banner URL must start with http(s)');
+      return;
+    }
 
-    const banner: Media | null = form.bannerUrl
-      ? { url: form.bannerUrl.trim(), alt: form.bannerAlt.trim() }
-      : null;
+    // Build body without nulls
+    const body: UpdateProfileMediaBody = {};
+    const avatarUrl = form.avatarUrl.trim();
+    const bannerUrl = form.bannerUrl.trim();
+
+    if (avatarUrl) body.avatar = { url: avatarUrl, alt: form.avatarAlt.trim() || name };
+    if (bannerUrl) body.banner = { url: bannerUrl, alt: form.bannerAlt.trim() || name };
+
+    if (!('avatar' in body) && !('banner' in body)) {
+      toast.error('Nothing to save — add at least one image URL.');
+      return;
+    }
 
     setBusy(true);
     try {
-      const updated = await updateProfileMedia(user.name, { avatar, banner });
-      // update local store so header/profile reflect new images immediately
-      useAuthStore.setState((s) => ({
-        user: s.user ? { ...s.user, avatar: updated.avatar, banner: updated.banner } : s.user,
-      }));
-      toast.success('Profile images updated');
+      const updated = await updateProfileMedia(name, body);
+
+      // Mirror avatar into auth store for header refresh
+      useAuthStore.setState((s) =>
+        s.user ? { user: { ...s.user, avatarUrl: updated.avatar?.url ?? null } } : s,
+      );
+
+      // Mark clean
+      setInitial(JSON.stringify(form));
+      toast.success('Profile media updated');
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not update profile');
+      toast.error((e as Error).message ?? 'Could not update profile media');
     } finally {
       setBusy(false);
     }
-  }
+  } // <-- make sure save() ends here
+
+  const canSave =
+    dirty && !busy && (form.avatarUrl.trim().length > 0 || form.bannerUrl.trim().length > 0);
 
   return (
     <section className="rounded border border-border-light bg-card p-4">
-      <h2 className="text-lg font-semibold mb-3">Profile images</h2>
+      <h2 className="mb-3 text-lg font-semibold">Profile images</h2>
 
       {/* Banner */}
-      <div className="grid gap-3 sm:grid-cols-3 items-start mb-4">
+      <div className="mb-4 grid items-start gap-3 sm:grid-cols-3">
         <div className="sm:col-span-1">
           <label htmlFor="bannerUrl" className="form-label">
             Banner URL
@@ -92,15 +113,15 @@ export default function ProfileMediaEditor() {
           />
         </div>
         <div className="sm:col-span-2">
-          <div className="rounded border border-border-light overflow-hidden">
+          <div className="overflow-hidden rounded border border-border-light">
             {form.bannerUrl ? (
               <img
                 src={form.bannerUrl}
                 alt={form.bannerAlt || 'Banner preview'}
-                className="w-full h-40 object-cover"
+                className="h-40 w-full object-cover"
               />
             ) : (
-              <div className="w-full h-40 bg-muted grid place-items-center text-sm text-muted">
+              <div className="grid h-40 w-full place-items-center text-sm text-muted">
                 No banner
               </div>
             )}
@@ -109,7 +130,7 @@ export default function ProfileMediaEditor() {
       </div>
 
       {/* Avatar */}
-      <div className="grid gap-3 sm:grid-cols-3 items-start">
+      <div className="grid items-start gap-3 sm:grid-cols-3">
         <div className="sm:col-span-1">
           <label htmlFor="avatarUrl" className="form-label">
             Avatar URL
@@ -130,7 +151,7 @@ export default function ProfileMediaEditor() {
         </div>
         <div className="sm:col-span-2">
           <div className="flex items-center gap-3">
-            <div className="h-20 w-20 rounded-full overflow-hidden border border-border-light">
+            <div className="h-20 w-20 overflow-hidden rounded-full border border-border-light">
               {form.avatarUrl ? (
                 <img
                   src={form.avatarUrl}
@@ -138,7 +159,7 @@ export default function ProfileMediaEditor() {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="h-full w-full bg-muted grid place-items-center text-xs text-muted">
+                <div className="grid h-full w-full place-items-center text-xs text-muted">
                   No avatar
                 </div>
               )}
@@ -148,9 +169,25 @@ export default function ProfileMediaEditor() {
         </div>
       </div>
 
-      <div className="mt-4 flex justify-end">
-        <Button onClick={save} disabled={busy}>
+      <div className="mt-4 flex justify-end gap-2">
+        <Button onClick={save} disabled={!canSave}>
           {busy ? 'Saving…' : 'Save'}
+        </Button>
+
+        <Button
+          type="button"
+          onClick={() => setForm((s) => ({ ...s, avatarUrl: '', avatarAlt: '' }))}
+          className="border border-border-light"
+        >
+          Clear avatar
+        </Button>
+
+        <Button
+          type="button"
+          onClick={() => setForm((s) => ({ ...s, bannerUrl: '', bannerAlt: '' }))}
+          className="border border-border-light"
+        >
+          Clear banner
         </Button>
       </div>
     </section>

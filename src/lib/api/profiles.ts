@@ -9,19 +9,16 @@ type ProfileResponse = {
   };
 };
 
-type UpdateProfileMediaBody = {
+export type UpdateProfileMediaBody = {
   avatar?: Media | null;
   banner?: Media | null;
 };
 
 /** Fetches /profiles/:name and updates the store's venueManager flag (best-effort). */
-export async function refreshVenueManager(
-  name: string,
-  token?: string,
-): Promise<boolean | undefined> {
+export async function refreshVenueManager(name: string): Promise<boolean | undefined> {
   try {
     const res = await fetch(`${API_PROFILES}/${encodeURIComponent(name)}`, {
-      headers: buildHeaders(token),
+      headers: buildHeaders('GET'),
     });
     if (!res.ok) return undefined;
 
@@ -40,14 +37,10 @@ export async function refreshVenueManager(
   }
 }
 
-export async function setVenueManager(
-  name: string,
-  enabled: boolean,
-  token: string,
-): Promise<boolean> {
+export async function setVenueManager(name: string, enabled: boolean): Promise<boolean> {
   const res = await fetch(`${API_PROFILES}/${encodeURIComponent(name)}`, {
     method: 'PUT',
-    headers: buildHeaders(token),
+    headers: buildHeaders('PUT'),
     body: JSON.stringify({ venueManager: enabled }),
   });
   if (!res.ok) return false;
@@ -60,8 +53,7 @@ export async function updateProfileMedia(
   profileName: string,
   body: UpdateProfileMediaBody,
 ): Promise<Pick<ProfileLite, 'avatar' | 'banner'>> {
-  const url = `${API_PROFILES}/${encodeURIComponent(profileName)}`;
-  const res = await fetch(url, {
+  const res = await fetch(`${API_PROFILES}/${encodeURIComponent(profileName)}`, {
     method: 'PUT',
     headers: buildHeaders('PUT'),
     body: JSON.stringify(body),

@@ -89,7 +89,7 @@ export async function createVenue(body: VenueInput) {
   const url = `${API_VENUES}`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: buildHeaders('POST'),
+    headers: buildHeaders(),
     body: JSON.stringify(body),
   });
   const json = await res.json().catch(() => ({}));
@@ -98,11 +98,15 @@ export async function createVenue(body: VenueInput) {
 }
 
 // UPDATE
-export async function updateVenue(id: string, body: Partial<VenueInput>) {
+export async function updateVenue(
+  id: string,
+  body: Partial<VenueInput>,
+  token?: string,
+): Promise<Venue> {
   const url = `${API_VENUES}/${encodeURIComponent(id)}`;
   const res = await fetch(url, {
     method: 'PUT',
-    headers: buildHeaders('PUT'),
+    headers: buildHeaders(token), // ✅ not 'PUT'
     body: JSON.stringify(body),
   });
   const json = await res.json().catch(() => ({}));
