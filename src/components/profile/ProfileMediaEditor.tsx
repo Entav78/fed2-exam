@@ -72,7 +72,16 @@ export default function ProfileMediaEditor() {
 
       // Mirror avatar into auth store for header refresh
       useAuthStore.setState((s) =>
-        s.user ? { user: { ...s.user, avatarUrl: updated.avatar?.url ?? null } } : s,
+        s.user
+          ? {
+              user: {
+                ...s.user,
+                avatarUrl: updated.avatar?.url ?? null,
+                avatar: updated.avatar ?? null,
+                banner: updated.banner ?? null,
+              },
+            }
+          : s,
       );
 
       // Mark clean

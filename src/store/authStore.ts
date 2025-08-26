@@ -10,21 +10,22 @@ export type AuthUser = {
   email: string;
   venueManager?: boolean;
   avatarUrl?: string | null;
-  avatar?: Media;
-  banner?: Media;
+  avatar?: Media | null;
+  banner?: Media | null;
 };
 
 type AuthState = {
   user: AuthUser | null;
   accessToken: string | null;
 
-  // include avatarUrl in the login payload so callers can pass it
   login: (d: {
     name: string;
     email: string;
     accessToken: string;
     venueManager?: boolean;
     avatarUrl?: string | null;
+    avatar?: Media | null; // <-- add
+    banner?: Media | null; // <-- add
   }) => void;
 
   logout: () => void;
@@ -39,16 +40,23 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       accessToken: null,
 
-      login: ({ name, email, accessToken, venueManager, avatarUrl }) => {
+      login: ({ name, email, accessToken, venueManager, avatarUrl, avatar, banner }) => {
         set({
-          user: { name, email, venueManager, avatarUrl: avatarUrl ?? null },
+          user: {
+            name,
+            email,
+            venueManager,
+            // simple URL used by header/UI
+            avatarUrl: avatarUrl ?? avatar?.url ?? null,
+            // full objects for editor/profile
+            avatar: avatar ?? null,
+            banner: banner ?? null,
+          },
           accessToken,
         });
         try {
           localStorage.setItem('token', accessToken);
-        } catch {
-          /* ignore */
-        }
+        } catch {}
       },
 
       logout: () => {

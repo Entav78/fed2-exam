@@ -22,6 +22,14 @@ type LoginSuccess = {
   };
 };
 
+type MeProfile = {
+  name: string;
+  email: string;
+  venueManager?: boolean;
+  avatar?: { url?: string; alt?: string } | null;
+  banner?: { url?: string; alt?: string } | null;
+};
+
 function extractApiError(json: unknown, fallback = 'Login failed') {
   const j = json as ApiErrorJSON;
   return j.errors?.[0]?.message ?? j.message ?? fallback;
@@ -76,28 +84,25 @@ const LoginPage = () => {
         const msg = j?.errors?.[0]?.message ?? j?.message ?? 'Could not load profile';
         throw new Error(msg);
       }
+
       const meJson = await meRes.json().catch(() => ({}));
-      const me = meJson?.data as
-        | {
-            name: string;
-            email: string;
-            venueManager?: boolean;
-            avatar?: { url?: string } | null;
-            banner?: { url?: string } | null;
-          }
-        | undefined;
+      const me = meJson?.data as MeProfile | undefined;
 
       if (!me?.name || !me?.email) {
         throw new Error('Profile response missing required fields');
       }
 
+      const toMedia = (m?: { url?: string; alt?: string } | null) =>
+        m?.url ? { url: m.url, alt: m.alt ?? me.name } : null;
       // 3) Put canonical profile into the store
       login({
         name: me.name,
         email: me.email,
-        accessToken: d.accessToken, // keep token from auth call
+        accessToken: d.accessToken,
         venueManager: !!me.venueManager,
-        avatarUrl: me.avatar?.url ?? null, // legacy field your UI already uses
+        avatarUrl: me.avatar?.url ?? null,
+        avatar: toMedia(me.avatar), // Media | null
+        banner: toMedia(me.banner),
       });
 
       // 4) Keep your venueManager refresh/enabling logic
