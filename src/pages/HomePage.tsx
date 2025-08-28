@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import VenueCard from '@/components/venues/VenueCard';
 import VenueFilters, { type VenueFiltersState } from '@/components/venues/VenueFilters';
@@ -105,8 +105,7 @@ export default function HomePage() {
     };
   }, [debouncedQ, filters.sort, filters.order]);
 
-  // “Load more results”
-  async function loadMore() {
+  const loadMore = useCallback(async () => {
     if (!hasMore || loadingMore) return;
     setLoadingMore(true);
     const nextPage = fetchPage + 1;
@@ -147,7 +146,31 @@ export default function HomePage() {
     } finally {
       setLoadingMore(false);
     }
-  }
+  }, [API_LIMIT, debouncedQ, filters.order, filters.sort, fetchPage, hasMore, loadingMore]);
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!hasMore) return; // nothing to observe if there’s no more pages
+    if (loading || loadingMore) return;
+
+    const el = sentinelRef.current;
+    if (!el) return;
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting) {
+          // small microtask delay to avoid rapid double fires
+          Promise.resolve().then(() => loadMore());
+        }
+      },
+      { root: null, rootMargin: '800px 0px 0px 0px', threshold: 0 }, // start early
+    );
+
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [hasMore, loading, loadingMore, loadMore]);
 
   // Availability first
   const available = useMemo(() => {
@@ -258,15 +281,18 @@ export default function HomePage() {
         ))}
       </ul>
 
-      {hasMore && !loading && (
-        <div className="mt-6 flex justify-center">
+      {/* Sentinel + manual fallback */}
+      {hasMore && (
+        <div className="mt-6 flex flex-col items-center">
+          <div ref={sentinelRef} className="h-px w-full" aria-hidden="true" />
           <button
             type="button"
             onClick={loadMore}
             disabled={loadingMore}
-            className="rounded border border-border-light px-4 py-2"
+            className="mt-3 rounded border border-border-light px-4 py-2 text-sm"
+            aria-busy={loadingMore}
           >
-            {loadingMore ? 'Loading…' : 'Load more results'}
+            {loadingMore ? 'Loading…' : 'Load more'}
           </button>
         </div>
       )}
