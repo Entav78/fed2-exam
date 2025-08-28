@@ -18,26 +18,17 @@ export const API_PROFILES = `${API_HOLIDAZE}/profiles`;
 // Optional API key (only required for some endpoints)
 export const NOROFF_API_KEY = import.meta.env.VITE_API_KEY ?? '';
 
-/** Helper: build common headers (JSON + optional API key + optional token) */
-// src/lib/api/constants.ts (or wherever buildHeaders lives)
 export function buildHeaders(method: string = 'GET') {
   const headers: Record<string, string> = {};
 
-  // Only set Content-Type when we intend to send a JSON body
-  if (method !== 'GET' && method !== 'HEAD') {
+  if (['POST', 'PUT', 'PATCH'].includes(method.toUpperCase())) {
     headers['Content-Type'] = 'application/json';
   }
 
-  // Noroff API key (public)
   const apiKey = import.meta.env.VITE_API_KEY;
   if (apiKey) headers['X-Noroff-API-Key'] = apiKey;
 
-  // Find token no matter which key you used
-  const token =
-    localStorage.getItem('token') ??
-    localStorage.getItem('accessToken') ?? // Tailfinder-style
-    undefined;
-
+  const token = localStorage.getItem('token') ?? localStorage.getItem('accessToken') ?? undefined;
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   return headers;

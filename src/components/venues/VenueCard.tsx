@@ -13,6 +13,8 @@ type Props = {
   className?: string;
 };
 
+//const price = new Intl.NumberFormat('no-NO').format(venue.price);
+
 export default function VenueCard({
   venue,
   layout = 'grid',
@@ -44,8 +46,10 @@ export default function VenueCard({
           <p className="line-clamp-1 font-semibold leading-tight">{venue.name}</p>
           {city && <p className="text-sm text-muted">{city}</p>}
           <p className="mt-1 text-sm">
-            NOK {venue.price} • Max {venue.maxGuests} guests
+            NOK {venue.price} / night • Max {venue.maxGuests} guests
           </p>
+
+          {venue.owner?.name && <p className="text-xs text-muted mt-1">Host: {venue.owner.name}</p>}
         </div>
 
         <div className="flex items-center gap-2">
@@ -71,19 +75,24 @@ export default function VenueCard({
   // Default grid card
   return (
     <article className={`overflow-hidden rounded-xl bg-white shadow-card ${className}`}>
-      {img?.url && (
+      {img?.url ? (
         <img
           src={img.url}
           alt={img.alt || venue.name}
           className="h-40 w-full object-cover"
           loading="lazy"
         />
+      ) : (
+        <div className="h-40 w-full bg-muted" />
       )}
+
       <div className="p-4">
         <h3 className="text-lg font-semibold">{venue.name}</h3>
         {city && <p className="text-sm text-muted">{city}</p>}
         <p className="text-sm text-muted">Max guests: {venue.maxGuests}</p>
         <p className="mt-2 font-bold">NOK {venue.price} / night</p>
+
+        {venue.owner?.name && <p className="text-xs text-muted mt-1">Host: {venue.owner.name}</p>}
 
         <Link to={`/venues/${venue.id}`} className="mt-2 inline-block text-brand hover:underline">
           View details →

@@ -11,8 +11,8 @@ import {
 // 👇 canonical booking shape for venues
 export type BookingLite = {
   id: string;
-  dateFrom: string; // ISO
-  dateTo: string; // ISO
+  dateFrom: string;
+  dateTo: string;
   guests: number;
 };
 
@@ -26,6 +26,8 @@ export type Venue = {
   rating?: number;
   meta?: VenueMeta;
   location?: VenueLocation;
+  created?: string;
+  updated?: string;
 
   // present when you request `_bookings=true`
   bookings?: BookingLite[];
@@ -61,15 +63,18 @@ async function getJSON<T>(url: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export async function fetchVenues(params?: {
+// -------- server-first list --------
+export type FetchVenuesParams = {
   q?: string;
-  sort?: string;
+  sort?: 'created' | 'price' | 'rating';
   sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;
   owner?: boolean;
-  bookings?: boolean; // <— ask for bookings so we can filter availability
-}): Promise<Venue[]> {
+  bookings?: boolean; // <— ask for bookings so we can filter availability client-side
+};
+
+export async function fetchVenues(params: FetchVenuesParams = {}): Promise<Venue[]> {
   const url = listVenuesUrl(params);
   const json = await getJSON<{ data: Venue[] }>(url);
   return json.data;
@@ -85,11 +90,11 @@ export async function getVenueById(
 }
 
 // CREATE
-export async function createVenue(body: VenueInput) {
+export async function createVenue(body: VenueInput): Promise<Venue> {
   const url = `${API_VENUES}`;
   const res = await fetch(url, {
     method: 'POST',
-    headers: buildHeaders(),
+    headers: buildHeaders('POST'), // ensure Content-Type
     body: JSON.stringify(body),
   });
   const json = await res.json().catch(() => ({}));
@@ -98,15 +103,11 @@ export async function createVenue(body: VenueInput) {
 }
 
 // UPDATE
-export async function updateVenue(
-  id: string,
-  body: Partial<VenueInput>,
-  token?: string,
-): Promise<Venue> {
+export async function updateVenue(id: string, body: Partial<VenueInput>): Promise<Venue> {
   const url = `${API_VENUES}/${encodeURIComponent(id)}`;
   const res = await fetch(url, {
     method: 'PUT',
-    headers: buildHeaders(token), // ✅ not 'PUT'
+    headers: buildHeaders('PUT'), // ensure Content-Type
     body: JSON.stringify(body),
   });
   const json = await res.json().catch(() => ({}));
