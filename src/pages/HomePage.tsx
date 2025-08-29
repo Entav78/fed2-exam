@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import VenueCard from '@/components/venues/VenueCard';
 import VenueFilters, { type VenueFiltersState } from '@/components/venues/VenueFilters';
@@ -49,12 +50,87 @@ export default function HomePage() {
   });
   const debouncedQ = useDebouncedValue(filters.q, 300);
 
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [allFetched, setAllFetched] = useState<Venue[]>([]);
   const [fetchPage, setFetchPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams); // preserve unrelated params
+
+    // Filters
+    const setOrDelete = (sp: URLSearchParams, k: string, v?: string | number | boolean | null) => {
+      if (v === undefined || v === null || v === '' || v === false) sp.delete(k);
+      else sp.set(k, String(v));
+    };
+
+    setOrDelete(next, 'q', debouncedQ || undefined);
+    setOrDelete(next, 'sort', filters.sort !== 'created' ? filters.sort : undefined);
+    setOrDelete(next, 'order', filters.order !== 'desc' ? filters.order : undefined);
+    setOrDelete(next, 'min', filters.minPrice);
+    setOrDelete(next, 'max', filters.maxPrice);
+    setOrDelete(next, 'minGuests', filters.guests);
+    setOrDelete(next, 'wifi', filters.wifi ? 1 : undefined);
+    setOrDelete(next, 'parking', filters.parking ? 1 : undefined);
+    setOrDelete(next, 'breakfast', filters.breakfast ? 1 : undefined);
+    setOrDelete(next, 'pets', filters.pets ? 1 : undefined);
+
+    // Availability controls
+    setOrDelete(next, 'from', dateFrom);
+    setOrDelete(next, 'to', dateTo);
+    setOrDelete(next, 'guests', guests > 1 ? guests : undefined);
+
+    setSearchParams(next, { replace: true }); // avoid history spam
+  }, [
+    debouncedQ,
+    filters.sort,
+    filters.order,
+    filters.minPrice,
+    filters.maxPrice,
+    filters.guests,
+    filters.wifi,
+    filters.parking,
+    filters.breakfast,
+    filters.pets,
+    dateFrom,
+    dateTo,
+    guests,
+    searchParams,
+    setSearchParams,
+  ]);
+
+  useEffect(() => {
+    // Filters
+    setFilters((prev) => ({
+      ...prev,
+      q: searchParams.get('q') ?? '',
+      sort: (searchParams.get('sort') as 'created' | 'price' | 'rating') ?? 'created',
+      order: (searchParams.get('order') as 'asc' | 'desc') ?? 'desc',
+      minPrice: searchParams.get('min') ?? undefined,
+      maxPrice: searchParams.get('max') ?? undefined,
+      guests: searchParams.get('minGuests') ?? undefined,
+      wifi: searchParams.get('wifi') === '1' || searchParams.get('wifi') === 'true',
+      parking: searchParams.get('parking') === '1' || searchParams.get('parking') === 'true',
+      breakfast: searchParams.get('breakfast') === '1' || searchParams.get('breakfast') === 'true',
+      pets: searchParams.get('pets') === '1' || searchParams.get('pets') === 'true',
+    }));
+
+    // Availability controls
+    const from = searchParams.get('from');
+    const to = searchParams.get('to');
+    const g = searchParams.get('guests');
+
+    if (from) setDateFrom(from);
+    if (to) setDateTo(to);
+    if (g && !Number.isNaN(+g)) setGuests(Math.max(1, +g));
+
+    // run once
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Initial load (and when q/sort/order change)
   useEffect(() => {
@@ -282,20 +358,25 @@ export default function HomePage() {
       </ul>
 
       {/* Sentinel + manual fallback */}
-      {hasMore && (
-        <div className="mt-6 flex flex-col items-center">
-          <div ref={sentinelRef} className="h-px w-full" aria-hidden="true" />
+      <div className="mt-6 flex h-10 items-center justify-center">
+        <div ref={sentinelRef} className="h-px w-full" aria-hidden="true" />
+        {loadingMore ? (
+          <span className="flex items-center gap-2 text-sm text-muted">
+            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+            Loading more…
+          </span>
+        ) : hasMore ? (
           <button
             type="button"
             onClick={loadMore}
-            disabled={loadingMore}
-            className="mt-3 rounded border border-border-light px-4 py-2 text-sm"
-            aria-busy={loadingMore}
+            className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
           >
-            {loadingMore ? 'Loading…' : 'Load more'}
+            Load more
           </button>
-        </div>
-      )}
+        ) : (
+          <span className="text-sm text-muted">No more results</span>
+        )}
+      </div>
     </div>
   );
 }
