@@ -1,4 +1,3 @@
-// src/pages/ManageVenuePage.tsx
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -12,6 +11,7 @@ import {
   type Venue,
   type VenueInput,
 } from '@/lib/api/venues';
+import { normalizeCity } from '@/lib/cities';
 import { normalizeCountry } from '@/lib/countries';
 import { useAuthStore } from '@/store/authStore';
 
@@ -234,7 +234,20 @@ export default function ManageVenuePage() {
 
     setBusy(true);
     try {
-      const payload = toVenueInput(form); // images[] -> media[]
+      const canonCountry = normalizeCountry(form.country ?? null);
+      const canonCity = normalizeCity(form.city ?? null);
+
+      const payload = toVenueInput(form);
+
+      payload.location = {
+        ...(payload.location ?? {}),
+        country: canonCountry ?? undefined, // remove if unknown
+        city: canonCity ?? undefined, // remove if unknown
+      };
+
+      if (form.country && !canonCountry) toast('Unknown country removed');
+      if (form.city && !canonCity) toast('Unknown city removed');
+
       if (!editing && (!payload.media || payload.media.length === 0)) {
         setBusy(false);
         return toast.error('Please add at least one image URL.');

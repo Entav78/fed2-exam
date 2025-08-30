@@ -5,6 +5,7 @@ import VenueCard from '@/components/venues/VenueCard';
 import VenueFilters, { type VenueFiltersState } from '@/components/venues/VenueFilters';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { fetchVenues, isVenueAvailable, type Venue } from '@/lib/api/venues';
+import { normalizeCity } from '@/lib/cities';
 import { normalizeCountry } from '@/lib/countries';
 
 // Build only the fields the API cares about for the list call
@@ -60,27 +61,27 @@ export default function HomePage() {
 
   const countries = useMemo(() => {
     const names = allFetched
-      .map((v) => normalizeCountry(v.location?.country ?? null)) // pass null when missing
-      .filter((c): c is string => Boolean(c)); // type-narrowing
+      .map((v) => normalizeCountry(v.location?.country ?? null))
+      .filter((c): c is string => Boolean(c));
     return Array.from(new Set(names)).sort();
   }, [allFetched]);
 
   const cities = useMemo(() => {
     if (!filters.country) return [];
-    const wanted = filters.country; // canonical
+    const wanted = filters.country; // canonical country
     const list = allFetched
       .filter((v) => normalizeCountry(v.location?.country ?? null) === wanted)
-      .map((v) => v.location?.city)
-      .filter((c): c is string => !!c && c.trim().length > 0);
+      .map((v) => normalizeCity(v.location?.city ?? null))
+      .filter((c): c is string => Boolean(c));
     return Array.from(new Set(list)).sort((a, b) => a.localeCompare(b));
   }, [allFetched, filters.country]);
 
+  // If the current city becomes invalid after country change, clear it
   useEffect(() => {
-    if (!filters.city) return;
-    if (!cities.includes(filters.city)) {
+    if (filters.city && !cities.includes(filters.city)) {
       setFilters((f) => ({ ...f, city: undefined }));
     }
-  }, [filters.country, cities]); // run when country or the set of cities changes
+  }, [filters.city, cities, setFilters]); // run when country or the set of cities changes
 
   const [searchParams, setSearchParams] = useSearchParams();
   const spKey = searchParams.toString();
@@ -311,8 +312,7 @@ export default function HomePage() {
       list = list.filter((v) => normalizeCountry(v.location?.country ?? null) === filters.country);
     }
     if (filters.city) {
-      const wantCity = filters.city.trim().toLowerCase();
-      list = list.filter((v) => (v.location?.city ?? '').trim().toLowerCase() === wantCity);
+      list = list.filter((v) => normalizeCity(v.location?.city ?? null) === filters.city);
     }
 
     // free-text
