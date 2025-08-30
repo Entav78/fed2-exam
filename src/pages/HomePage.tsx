@@ -59,15 +59,29 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
 
   const countries = useMemo(() => {
-    const set = new Set<string>();
-    for (const v of allFetched) {
-      const name = normalizeCountry(v.location?.country ?? '');
-      if (name) set.add(name);
-    }
-    return Array.from(set).sort();
+    const names = allFetched
+      .map((v) => normalizeCountry(v.location?.country ?? null)) // pass null when missing
+      .filter((c): c is string => Boolean(c)); // type-narrowing
+    return Array.from(new Set(names)).sort();
   }, [allFetched]);
 
-  // right after you get useSearchParams()
+  const cities = useMemo(() => {
+    if (!filters.country) return [];
+    const wanted = filters.country; // canonical
+    const list = allFetched
+      .filter((v) => normalizeCountry(v.location?.country ?? null) === wanted)
+      .map((v) => v.location?.city)
+      .filter((c): c is string => !!c && c.trim().length > 0);
+    return Array.from(new Set(list)).sort((a, b) => a.localeCompare(b));
+  }, [allFetched, filters.country]);
+
+  useEffect(() => {
+    if (!filters.city) return;
+    if (!cities.includes(filters.city)) {
+      setFilters((f) => ({ ...f, city: undefined }));
+    }
+  }, [filters.country, cities]); // run when country or the set of cities changes
+
   const [searchParams, setSearchParams] = useSearchParams();
   const spKey = searchParams.toString();
 
@@ -90,6 +104,7 @@ export default function HomePage() {
     setOrDelete(next, 'breakfast', filters.breakfast ? 1 : undefined);
     setOrDelete(next, 'pets', filters.pets ? 1 : undefined);
     setOrDelete(next, 'country', filters.country || undefined);
+    setOrDelete(next, 'city', filters.city || undefined);
 
     // Availability controls
     setOrDelete(next, 'from', dateFrom);
@@ -109,7 +124,8 @@ export default function HomePage() {
     filters.parking,
     filters.breakfast,
     filters.pets,
-    filters.country, // include country too
+    filters.country,
+    filters.city,
     dateFrom,
     dateTo,
     guests,
@@ -131,6 +147,7 @@ export default function HomePage() {
       breakfast: searchParams.get('breakfast') === '1' || searchParams.get('breakfast') === 'true',
       pets: searchParams.get('pets') === '1' || searchParams.get('pets') === 'true',
       country: searchParams.get('country') ?? undefined,
+      city: searchParams.get('city') ?? undefined,
     }));
 
     // Availability controls
@@ -268,7 +285,6 @@ export default function HomePage() {
     return allFetched.filter((v) => isVenueAvailable(v, dateFrom, dateTo, guests));
   }, [allFetched, dateFrom, dateTo, guests]);
 
-  // Then UI filters + client-side matching + sort
   const visibleVenues = useMemo(() => {
     const q = debouncedQ.trim().toLowerCase();
 
@@ -288,7 +304,21 @@ export default function HomePage() {
         .join(' ')
         .toLowerCase();
 
-    let list = available.filter((v) => !q || hay(v).includes(q));
+    let list = available;
+
+    // country/city first (canonical country names)
+    if (filters.country) {
+      list = list.filter((v) => normalizeCountry(v.location?.country ?? null) === filters.country);
+    }
+    if (filters.city) {
+      const wantCity = filters.city.trim().toLowerCase();
+      list = list.filter((v) => (v.location?.city ?? '').trim().toLowerCase() === wantCity);
+    }
+
+    // free-text
+    if (q) list = list.filter((v) => hay(v).includes(q));
+
+    // numeric/toggles
     if (filters.guests) list = list.filter((v) => v.maxGuests >= Number(filters.guests));
     if (filters.minPrice) list = list.filter((v) => v.price >= Number(filters.minPrice));
     if (filters.maxPrice) list = list.filter((v) => v.price <= Number(filters.maxPrice));
@@ -296,19 +326,14 @@ export default function HomePage() {
     if (filters.parking) list = list.filter((v) => !!v.meta?.parking);
     if (filters.breakfast) list = list.filter((v) => !!v.meta?.breakfast);
     if (filters.pets) list = list.filter((v) => !!v.meta?.pets);
-    if (filters.country) {
-      const wanted = normalizeCountry(filters.country);
-      if (wanted) {
-        list = list.filter((v) => normalizeCountry(v.location?.country ?? '') === wanted);
-      }
-    }
 
+    // sort (clone before sorting to avoid mutating `available`)
     const dir = filters.order === 'asc' ? 1 : -1;
-    if (filters.sort === 'price') list.sort((a, b) => (a.price - b.price) * dir);
-    else if (filters.sort === 'rating')
-      list.sort((a, b) => ((a.rating ?? 0) - (b.rating ?? 0)) * dir);
+    if (filters.sort === 'price') return [...list].sort((a, b) => (a.price - b.price) * dir);
+    if (filters.sort === 'rating')
+      return [...list].sort((a, b) => ((a.rating ?? 0) - (b.rating ?? 0)) * dir);
 
-    // For "Newest" we keep server order (no-op)
+    // "Newest" – keep server order
     return list;
   }, [available, debouncedQ, filters]);
 
@@ -321,6 +346,7 @@ export default function HomePage() {
         onChange={(next) => setFilters(next)}
         onClear={() => setFilters({ q: '', sort: 'created', order: 'desc' })}
         countries={countries}
+        cities={cities}
       />
 
       {/* Availability form */}

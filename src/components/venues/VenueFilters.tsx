@@ -12,17 +12,25 @@ export type VenueFiltersState = {
   sort?: 'price' | 'rating' | 'created';
   order?: 'asc' | 'desc';
   country?: string;
+  city?: string;
 };
 
 type Props = {
   value: VenueFiltersState;
   onChange: (next: VenueFiltersState) => void;
   onClear?: () => void;
-  countries?: string[];
+  countries?: string[]; // pass from HomePage
+  cities?: string[]; // pass from HomePage (depends on country)
 };
 
-export default function VenueFilters({ value, onChange, onClear, countries = [] }: Props) {
-  type TextKeys = 'q' | 'minPrice' | 'maxPrice' | 'country';
+export default function VenueFilters({
+  value,
+  onChange,
+  onClear,
+  countries = [],
+  cities = [],
+}: Props) {
+  type TextKeys = 'q' | 'minPrice' | 'maxPrice' | 'country' | 'city';
   type BoolKeys = 'wifi' | 'parking' | 'breakfast' | 'pets';
 
   const onText = (k: TextKeys) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -31,6 +39,7 @@ export default function VenueFilters({ value, onChange, onClear, countries = [] 
   const onBool = (k: BoolKeys) => (e: React.ChangeEvent<HTMLInputElement>) =>
     onChange({ ...value, [k]: e.currentTarget.checked });
 
+  // Combine sort + order in one dropdown
   const sortKey = `${value.sort ?? 'created'}:${value.order ?? 'desc'}`;
   const onSortKey = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const [sort, order] = e.currentTarget.value.split(':') as [
@@ -40,8 +49,16 @@ export default function VenueFilters({ value, onChange, onClear, countries = [] 
     onChange({ ...value, sort, order });
   };
 
+  // Optional nicety: when country changes, clear city if no country selected
+  const onCountryChange: React.ChangeEventHandler<HTMLSelectElement> = (e) => {
+    const nextCountry = e.currentTarget.value;
+    const next = { ...value, country: nextCountry };
+    if (!nextCountry) next.city = '';
+    onChange(next);
+  };
+
   return (
-    <div className="rounded border border-border-light bg-card p-3 grid gap-3 md:grid-cols-4">
+    <div className="grid gap-3 rounded border border-border-light bg-card p-3 md:grid-cols-4">
       {/* Search */}
       <input
         className="input-field md:col-span-2"
@@ -80,7 +97,7 @@ export default function VenueFilters({ value, onChange, onClear, countries = [] 
       </div>
 
       {/* Toggles */}
-      <div className="md:col-span-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="md:col-span-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={!!value.wifi} onChange={onBool('wifi')} /> Wifi
         </label>
@@ -96,24 +113,32 @@ export default function VenueFilters({ value, onChange, onClear, countries = [] 
         </label>
       </div>
 
-      {/* Optional: Country */}
-      {countries.length > 0 && (
-        <div className="md:col-span-4">
-          <select
-            className="input-field"
-            value={value.country ?? ''}
-            onChange={onText('country')}
-            aria-label="Filter by country"
-          >
-            <option value="">All countries</option>
-            {countries.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+      {/* Country & City */}
+      <div className="grid grid-cols-2 gap-2 md:col-span-2">
+        <select className="input-field" value={value.country ?? ''} onChange={onCountryChange}>
+          <option value="">All countries</option>
+          {countries.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+
+        <select
+          className="input-field"
+          value={value.city ?? ''}
+          onChange={onText('city')}
+          disabled={!value.country || cities.length === 0}
+          title={!value.country ? 'Pick a country first' : undefined}
+        >
+          <option value="">All cities</option>
+          {cities.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="md:col-span-4 flex justify-end">
         <button
