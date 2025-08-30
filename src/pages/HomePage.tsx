@@ -5,6 +5,7 @@ import VenueCard from '@/components/venues/VenueCard';
 import VenueFilters, { type VenueFiltersState } from '@/components/venues/VenueFilters';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { fetchVenues, isVenueAvailable, type Venue } from '@/lib/api/venues';
+import { normalizeCountry } from '@/lib/countries';
 
 // Build only the fields the API cares about for the list call
 function toVenueListParams(p: {
@@ -50,8 +51,6 @@ export default function HomePage() {
   });
   const debouncedQ = useDebouncedValue(filters.q, 300);
 
-  const [searchParams, setSearchParams] = useSearchParams();
-
   const [allFetched, setAllFetched] = useState<Venue[]>([]);
   const [fetchPage, setFetchPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -59,10 +58,22 @@ export default function HomePage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const next = new URLSearchParams(searchParams); // preserve unrelated params
+  const countries = useMemo(() => {
+    const set = new Set<string>();
+    for (const v of allFetched) {
+      const name = normalizeCountry(v.location?.country ?? '');
+      if (name) set.add(name);
+    }
+    return Array.from(set).sort();
+  }, [allFetched]);
 
-    // Filters
+  // right after you get useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams();
+  const spKey = searchParams.toString();
+
+  useEffect(() => {
+    const next = new URLSearchParams(spKey); // preserve unrelated params safely
+
     const setOrDelete = (sp: URLSearchParams, k: string, v?: string | number | boolean | null) => {
       if (v === undefined || v === null || v === '' || v === false) sp.delete(k);
       else sp.set(k, String(v));
@@ -78,14 +89,16 @@ export default function HomePage() {
     setOrDelete(next, 'parking', filters.parking ? 1 : undefined);
     setOrDelete(next, 'breakfast', filters.breakfast ? 1 : undefined);
     setOrDelete(next, 'pets', filters.pets ? 1 : undefined);
+    setOrDelete(next, 'country', filters.country || undefined);
 
     // Availability controls
     setOrDelete(next, 'from', dateFrom);
     setOrDelete(next, 'to', dateTo);
     setOrDelete(next, 'guests', guests > 1 ? guests : undefined);
 
-    setSearchParams(next, { replace: true }); // avoid history spam
+    setSearchParams(next, { replace: true });
   }, [
+    spKey, // 👈 replaces searchParams in deps
     debouncedQ,
     filters.sort,
     filters.order,
@@ -96,10 +109,10 @@ export default function HomePage() {
     filters.parking,
     filters.breakfast,
     filters.pets,
+    filters.country, // include country too
     dateFrom,
     dateTo,
     guests,
-    searchParams,
     setSearchParams,
   ]);
 
@@ -117,6 +130,7 @@ export default function HomePage() {
       parking: searchParams.get('parking') === '1' || searchParams.get('parking') === 'true',
       breakfast: searchParams.get('breakfast') === '1' || searchParams.get('breakfast') === 'true',
       pets: searchParams.get('pets') === '1' || searchParams.get('pets') === 'true',
+      country: searchParams.get('country') ?? undefined,
     }));
 
     // Availability controls
@@ -282,6 +296,12 @@ export default function HomePage() {
     if (filters.parking) list = list.filter((v) => !!v.meta?.parking);
     if (filters.breakfast) list = list.filter((v) => !!v.meta?.breakfast);
     if (filters.pets) list = list.filter((v) => !!v.meta?.pets);
+    if (filters.country) {
+      const wanted = normalizeCountry(filters.country);
+      if (wanted) {
+        list = list.filter((v) => normalizeCountry(v.location?.country ?? '') === wanted);
+      }
+    }
 
     const dir = filters.order === 'asc' ? 1 : -1;
     if (filters.sort === 'price') list.sort((a, b) => (a.price - b.price) * dir);
@@ -298,12 +318,9 @@ export default function HomePage() {
 
       <VenueFilters
         value={filters}
-        onChange={(next) => {
-          setFilters(next);
-        }}
-        onClear={() => {
-          setFilters({ q: '', sort: 'created', order: 'desc' });
-        }}
+        onChange={(next) => setFilters(next)}
+        onClear={() => setFilters({ q: '', sort: 'created', order: 'desc' })}
+        countries={countries}
       />
 
       {/* Availability form */}

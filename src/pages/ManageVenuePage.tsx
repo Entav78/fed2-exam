@@ -12,6 +12,7 @@ import {
   type Venue,
   type VenueInput,
 } from '@/lib/api/venues';
+import { normalizeCountry } from '@/lib/countries';
 import { useAuthStore } from '@/store/authStore';
 
 type FormState = {
@@ -146,14 +147,19 @@ export default function ManageVenuePage() {
       .map(({ url, alt }) => ({ url: url.trim(), alt: alt.trim() }))
       .filter((m) => m.url && /^https?:\/\//i.test(m.url)); // keep http(s) only
 
+    const val = (s?: string) => (s?.trim() ? s.trim() : undefined);
+    const num = (s?: string) => (s && s.trim() !== '' ? Number(s) : undefined);
+
+    const normalizedCountry = normalizeCountry(f.country);
+
     const location = {
-      address: f.address.trim() || undefined,
-      city: f.city.trim() || undefined,
-      zip: f.zip.trim() || undefined,
-      country: f.country.trim() || undefined,
-      continent: f.continent.trim() || undefined,
-      lat: f.lat ? Number(f.lat) : undefined,
-      lng: f.lng ? Number(f.lng) : undefined,
+      address: val(f.address),
+      city: val(f.city),
+      zip: val(f.zip),
+      country: normalizedCountry ?? undefined,
+      continent: val(f.continent), // or derive from country if you want
+      lat: num(f.lat),
+      lng: num(f.lng),
     };
 
     return {
