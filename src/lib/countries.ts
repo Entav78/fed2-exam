@@ -17,6 +17,8 @@ const ALIASES: Record<string, string> = {
   tanzania: 'Tanzania, United Republic of',
   'czech republic': 'Czechia',
   brasil: 'Brazil',
+  norway: 'Norway',
+  norge: 'Norway',
 };
 
 function tidy(s: string) {
