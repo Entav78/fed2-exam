@@ -73,17 +73,18 @@ export default function MyBookingsList() {
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2">
+      <ul className="grid gap-4 lg:grid-cols-2">
         {visible.map((b) => (
-          <BookingCard
-            key={b.id}
-            booking={b}
-            onCancel={cancel}
-            onChangeDates={openChange} // <-- enable “Change dates”
-            busy={busyId === b.id}
-          />
+          <li key={b.id}>
+            <BookingCard
+              booking={b}
+              onCancel={cancel}
+              onChangeDates={openChange} // ✅ opens dialog
+              busy={busyId === b.id}
+            />
+          </li>
         ))}
-      </div>
+      </ul>
 
       {rows.length > LIMIT && (
         <div className="mt-3">
@@ -96,13 +97,13 @@ export default function MyBookingsList() {
         </div>
       )}
 
-      {/* Only mount dialog when we have a venue id */}
+      {/* Dialog only when we have a venue id */}
       {editBooking?.venue?.id && (
         <ChangeBookingDialog
           booking={editBooking}
           venueId={editBooking.venue.id}
           onClose={closeChange}
-          onUpdated={fetchMine} // refresh after successful change
+          onUpdated={fetchMine} // refresh preview after change
         />
       )}
     </>
