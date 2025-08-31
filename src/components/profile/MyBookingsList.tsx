@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
 import BookingCard from '@/components/bookings/BookingCard';
+import ChangeBookingDialog from '@/components/bookings/ChangeBookingDialog';
 import { type Booking, deleteBooking, getMyBookings } from '@/lib/api/bookings';
 import { useAuthStore } from '@/store/authStore';
 
@@ -17,21 +18,34 @@ export default function MyBookingsList() {
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  useEffect(() => {
+  // NEW: dialog state
+  const [editBooking, setEditBooking] = useState<Booking | null>(null);
+  const openChange = (b: Booking) => setEditBooking(b);
+  const closeChange = () => setEditBooking(null);
+
+  const fetchMine = useCallback(async () => {
     if (!user?.name) return;
+    const data = await getMyBookings(user.name, true); // _venue=true
+    setRows([...data].sort(byStartAsc));
+  }, [user?.name]);
+
+  useEffect(() => {
+    let active = true;
     (async () => {
       try {
         setLoading(true);
-        const data = await getMyBookings(user.name, true); // _venue=true
-        setRows([...data].sort(byStartAsc));
-        setError(null);
+        await fetchMine();
+        if (active) setError(null);
       } catch (e) {
-        setError((e as Error).message);
+        if (active) setError((e as Error).message);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     })();
-  }, [user?.name]);
+    return () => {
+      active = false;
+    };
+  }, [fetchMine]);
 
   const LIMIT = 4;
   const visible = rows.slice(0, LIMIT);
@@ -44,6 +58,7 @@ export default function MyBookingsList() {
     try {
       await deleteBooking(id);
       toast.success('Booking cancelled');
+      await fetchMine(); // keep in sync
     } catch (e) {
       setRows(prev); // rollback
       toast.error(e instanceof Error ? e.message : 'Could not cancel booking');
@@ -60,7 +75,13 @@ export default function MyBookingsList() {
     <>
       <div className="grid gap-4 md:grid-cols-2">
         {visible.map((b) => (
-          <BookingCard key={b.id} booking={b} onCancel={cancel} busy={busyId === b.id} />
+          <BookingCard
+            key={b.id}
+            booking={b}
+            onCancel={cancel}
+            onChangeDates={openChange} // <-- enable “Change dates”
+            busy={busyId === b.id}
+          />
         ))}
       </div>
 
@@ -73,6 +94,16 @@ export default function MyBookingsList() {
             View all bookings
           </Link>
         </div>
+      )}
+
+      {/* Only mount dialog when we have a venue id */}
+      {editBooking?.venue?.id && (
+        <ChangeBookingDialog
+          booking={editBooking}
+          venueId={editBooking.venue.id}
+          onClose={closeChange}
+          onUpdated={fetchMine} // refresh after successful change
+        />
       )}
     </>
   );

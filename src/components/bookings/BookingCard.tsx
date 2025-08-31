@@ -1,15 +1,17 @@
 import { Link } from 'react-router-dom';
 
+import { MiniButton } from '@/components/ui/MiniButton';
 import type { Booking } from '@/lib/api/bookings';
 
 type Props = {
   booking: Booking;
-  onCancel?: (id: string) => void; // omit to hide the Cancel btn
-  busy?: boolean; // true => disable + show “Cancelling…”
+  onCancel?: (id: string) => void;
+  onChangeDates?: (b: Booking) => void;
+  busy?: boolean;
 };
 
-export default function BookingCard({ booking, onCancel, busy }: Props) {
-  const isPast = new Date(booking.dateTo) < new Date();
+export default function BookingCard({ booking, onCancel, onChangeDates, busy = false }: Props) {
+  const isPast = new Date(booking.dateTo).getTime() < Date.now();
   const img = booking.venue?.media?.[0];
   const city = booking.venue?.location?.city;
   const start = new Date(booking.dateFrom);
@@ -51,7 +53,6 @@ export default function BookingCard({ booking, onCancel, busy }: Props) {
         </Link>
       ) : (
         <>
-          {/* Fallback if no venue id */}
           {img?.url ? (
             <img
               src={img.url}
@@ -72,23 +73,16 @@ export default function BookingCard({ booking, onCancel, busy }: Props) {
         </>
       )}
 
-      {/* Actions (stay as buttons, not links) */}
-      <div className="flex items-center gap-2 shrink-0">
-        {/* Optional: add a Change dates button that opens your dialog */}
-        {/* <button onClick={() => onChangeDates?.(booking)} className="rounded border px-3 py-1 text-sm hover:bg-muted">
-          Change dates
-        </button> */}
+      {/* Actions */}
+      <div className="ml-auto flex items-center gap-2 shrink-0">
+        {!!onChangeDates && !!venueId && !isPast && (
+          <MiniButton onClick={() => onChangeDates(booking)}>Change dates</MiniButton>
+        )}
 
         {!isPast && onCancel && (
-          <button
-            onClick={() => onCancel(booking.id)}
-            disabled={busy}
-            className={`rounded border border-border-light px-3 py-1 text-sm ${
-              busy ? 'cursor-not-allowed opacity-50' : 'hover:bg-muted'
-            }`}
-          >
+          <MiniButton onClick={() => onCancel(booking.id)} disabled={busy}>
             {busy ? 'Cancelling…' : 'Cancel'}
-          </button>
+          </MiniButton>
         )}
       </div>
     </div>

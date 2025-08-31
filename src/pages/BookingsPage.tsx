@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 
+import BookingCard from '@/components/bookings/BookingCard';
+import ChangeBookingDialog from '@/components/bookings/ChangeBookingDialog';
 import { type Booking, deleteBooking, getMyBookings } from '@/lib/api/bookings';
 import { useAuthStore } from '@/store/authStore';
 
@@ -45,11 +47,25 @@ export default function BookingsPage() {
     return rows.filter((b) => isPast(b, now));
   }, [rows]);
 
+  const [editing, setEditing] = useState<Booking | null>(null);
+
+  function openChange(b: Booking) {
+    if (b.venue?.id) setEditing(b);
+  }
+  function closeDialog() {
+    setEditing(null);
+  }
+  async function refetchBookings() {
+    if (!user?.name) return;
+    const fresh = await getMyBookings(user.name, true);
+    setRows(fresh.sort(byDateFromAsc));
+  }
+
   async function cancel(id: string) {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
     const prev = rows;
     setBusyId(id);
-    setRows((r) => r.filter((b) => b.id !== id)); // optimistic
+    setRows((r) => r.filter((b) => b.id !== id));
     try {
       await deleteBooking(id);
       const fresh = await getMyBookings(user!.name, true);
@@ -78,51 +94,13 @@ export default function BookingsPage() {
           {upcoming.length ? (
             <ul className="grid gap-3 sm:grid-cols-2">
               {upcoming.map((b) => (
-                // inside Upcoming map
-                <li
-                  key={b.id}
-                  className="flex items-center gap-4 rounded border border-border-light bg-card p-3"
-                >
-                  {/* thumbnail */}
-                  {b.venue?.media?.[0]?.url ? (
-                    <img
-                      src={b.venue.media[0].url}
-                      alt={b.venue.media[0].alt || b.venue.name || 'Venue image'}
-                      className="h-16 w-16 rounded object-cover"
-                    />
-                  ) : (
-                    <div className="h-16 w-16 rounded bg-muted" />
-                  )}
-
-                  {/* info */}
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium">
-                      {new Date(b.dateFrom).toLocaleDateString()} →{' '}
-                      {new Date(b.dateTo).toLocaleDateString()}
-                    </div>
-                    <div className="text-sm text-muted">Guests {b.guests}</div>
-                    {b.venue && (
-                      <div className="mt-1">
-                        <div className="font-semibold line-clamp-1">{b.venue.name}</div>
-                        {b.venue.location?.city && (
-                          <div className="text-sm text-muted">{b.venue.location.city}</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* actions */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => cancel(b.id)}
-                      disabled={busyId === b.id}
-                      className={`rounded border border-border-light px-3 py-1 text-sm ${
-                        busyId === b.id ? 'cursor-not-allowed opacity-50' : 'hover:bg-muted'
-                      }`}
-                    >
-                      {busyId === b.id ? 'Cancelling…' : 'Cancel'}
-                    </button>
-                  </div>
+                <li key={b.id}>
+                  <BookingCard
+                    booking={b}
+                    onCancel={cancel}
+                    onChangeDates={openChange}
+                    busy={busyId === b.id} // optional: let the card disable its Cancel button
+                  />
                 </li>
               ))}
             </ul>
@@ -163,6 +141,14 @@ export default function BookingsPage() {
                       </div>
                     )}
                   </div>
+                  {editing?.venue?.id && (
+                    <ChangeBookingDialog
+                      booking={editing}
+                      venueId={editing.venue.id}
+                      onClose={closeDialog}
+                      onUpdated={refetchBookings}
+                    />
+                  )}
                 </li>
               ))}
             </ul>
