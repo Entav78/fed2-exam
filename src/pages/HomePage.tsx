@@ -45,6 +45,9 @@ export default function HomePage() {
   const [dateTo, setDateTo] = useState(toISODate(addDays(new Date(), 3)));
   const [guests, setGuests] = useState(2);
 
+  const todayISO = useMemo(() => toISODate(new Date()), []);
+  const minTo = useMemo(() => toISODate(addDays(new Date(dateFrom), 1)), [dateFrom]);
+
   const [filters, setFilters] = useState<VenueFiltersState>({
     q: '',
     sort: 'created',
@@ -359,7 +362,14 @@ export default function HomePage() {
           <input
             type="date"
             value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
+            min={todayISO} // optional: disallow past dates
+            onChange={(e) => {
+              const v = e.target.value;
+              setDateFrom(v);
+              if (dateTo <= v) {
+                setDateTo(toISODate(addDays(new Date(v), 1))); // bump 'to' forward
+              }
+            }}
             className="w-full rounded-md border border-border-light px-3 py-2"
           />
         </label>
@@ -369,7 +379,11 @@ export default function HomePage() {
           <input
             type="date"
             value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
+            min={minTo} // at least the day after 'from'
+            onChange={(e) => {
+              const v = e.target.value;
+              setDateTo(v <= dateFrom ? minTo : v); // guard manual typing
+            }}
             className="w-full rounded-md border border-border-light px-3 py-2"
           />
         </label>

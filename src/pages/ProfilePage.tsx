@@ -1,4 +1,3 @@
-// src/pages/ProfilePage.tsx
 import MyBookingsList from '@/components/profile/MyBookingsList';
 import MyVenuesList from '@/components/profile/MyVenuesList';
 import ProfileMediaEditor from '@/components/profile/ProfileMediaEditor';

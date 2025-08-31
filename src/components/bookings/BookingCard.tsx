@@ -9,12 +9,13 @@ type Props = {
 };
 
 export default function BookingCard({ booking, onCancel, busy }: Props) {
+  const isPast = new Date(booking.dateTo) < new Date();
   const img = booking.venue?.media?.[0];
   const city = booking.venue?.location?.city;
-
   const start = new Date(booking.dateFrom);
   const end = new Date(booking.dateTo);
-  const isPast = end.getTime() < Date.now();
+  const venueId = booking.venue?.id;
+  const venueName = booking.venue?.name ?? 'Venue';
 
   return (
     <div
@@ -22,37 +23,61 @@ export default function BookingCard({ booking, onCancel, busy }: Props) {
         isPast ? 'opacity-80' : ''
       }`}
     >
-      {/* thumbnail */}
-      {img?.url ? (
-        <img
-          src={img.url}
-          alt={img.alt || booking.venue?.name || 'Venue image'}
-          className="h-16 w-16 rounded object-cover"
-          loading="lazy"
-        />
+      {/* Clickable content area */}
+      {venueId ? (
+        <Link
+          to={`/venues/${venueId}`}
+          className="flex flex-1 min-w-0 items-center gap-4 -m-2 p-2 rounded hover:bg-muted/40"
+          title={`Open ${venueName}`}
+        >
+          {img?.url ? (
+            <img
+              src={img.url}
+              alt={img.alt || venueName}
+              className="h-16 w-16 rounded object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="h-16 w-16 rounded bg-muted" />
+          )}
+
+          <div className="min-w-0">
+            <p className="font-semibold leading-tight line-clamp-1 hover:underline">{venueName}</p>
+            {city && <p className="text-sm text-muted">{city}</p>}
+            <p className="mt-1 text-sm">
+              {start.toLocaleDateString()} → {end.toLocaleDateString()} • Guests {booking.guests}
+            </p>
+          </div>
+        </Link>
       ) : (
-        <div className="h-16 w-16 rounded bg-muted" />
+        <>
+          {/* Fallback if no venue id */}
+          {img?.url ? (
+            <img
+              src={img.url}
+              alt={img.alt || venueName}
+              className="h-16 w-16 rounded object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="h-16 w-16 rounded bg-muted" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold leading-tight line-clamp-1">{venueName}</p>
+            {city && <p className="text-sm text-muted">{city}</p>}
+            <p className="mt-1 text-sm">
+              {start.toLocaleDateString()} → {end.toLocaleDateString()} • Guests {booking.guests}
+            </p>
+          </div>
+        </>
       )}
 
-      {/* info */}
-      <div className="min-w-0 flex-1">
-        <p className="font-semibold leading-tight line-clamp-1">{booking.venue?.name ?? 'Venue'}</p>
-        {city && <p className="text-sm text-muted">{city}</p>}
-        <p className="mt-1 text-sm">
-          {start.toLocaleDateString()} → {end.toLocaleDateString()} • Guests {booking.guests}
-        </p>
-      </div>
-
-      {/* actions */}
-      <div className="flex items-center gap-2">
-        {booking.venue?.id && (
-          <Link
-            to={`/venues/${booking.venue.id}`}
-            className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
-          >
-            Open
-          </Link>
-        )}
+      {/* Actions (stay as buttons, not links) */}
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Optional: add a Change dates button that opens your dialog */}
+        {/* <button onClick={() => onChangeDates?.(booking)} className="rounded border px-3 py-1 text-sm hover:bg-muted">
+          Change dates
+        </button> */}
 
         {!isPast && onCancel && (
           <button
