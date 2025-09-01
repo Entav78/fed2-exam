@@ -3,10 +3,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
-import { API_PROFILES } from '@/lib/api/constants';
-import { buildHeaders } from '@/lib/api/constants';
-import { getLoginUrl } from '@/lib/api/constants';
-import { refreshVenueManager, setVenueManager } from '@/lib/api/profiles';
+import { API_PROFILES, buildHeaders, getLoginUrl } from '@/lib/api/constants';
 import { useAuthStore } from '@/store/authStore';
 
 const API_KEY = import.meta.env.VITE_API_KEY as string | undefined;
@@ -70,12 +67,9 @@ const LoginPage = () => {
         throw new Error('Invalid login response');
       }
 
-      // 1) Make the token available to buildHeaders()
       try {
         localStorage.setItem('token', d.accessToken);
-      } catch {
-        /* ignore */
-      }
+      } catch {}
 
       const meUrl = `${API_PROFILES}/${encodeURIComponent(d.name)}`;
       const meRes = await fetch(meUrl, { headers: buildHeaders() });
@@ -94,7 +88,7 @@ const LoginPage = () => {
 
       const toMedia = (m?: { url?: string; alt?: string } | null) =>
         m?.url ? { url: m.url, alt: m.alt ?? me.name } : null;
-      // 3) Put canonical profile into the store
+
       login({
         name: me.name,
         email: me.email,
@@ -104,19 +98,6 @@ const LoginPage = () => {
         avatar: toMedia(me.avatar), // Media | null
         banner: toMedia(me.banner),
       });
-
-      // 4) Keep your venueManager refresh/enabling logic
-      await refreshVenueManager(me.name);
-
-      // If still false but email is stud.noroff.no, try to enable it
-      const isStud = /@stud\.noroff\.no$/i.test(me.email);
-      const current = useAuthStore.getState().user?.venueManager;
-      if (isStud && current === false) {
-        const ok = await setVenueManager(me.name, true);
-        if (ok) {
-          useAuthStore.setState((s) => (s.user ? { user: { ...s.user, venueManager: true } } : s));
-        }
-      }
 
       toast.success('Logged in successfully!');
       navigate('/');
