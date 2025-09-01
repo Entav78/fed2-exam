@@ -21,15 +21,15 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
 
   return (
     <div
-      className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4
-                rounded border border-border-light bg-card p-4 shadow
-                ${isPast ? 'opacity-80' : ''}`}
+      className={`card flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 ${
+        isPast ? 'opacity-80' : ''
+      }`}
     >
       {/* Clickable content area */}
       {venueId ? (
         <Link
           to={`/venues/${venueId}`}
-          className="flex flex-1 min-w-0 items-center gap-4 p-2 pr-3 rounded hover:bg-muted/40 focus:outline-none focus:ring-2 focus:ring-brand/40"
+          className="flex flex-1 min-w-0 items-center gap-4 p-2 pr-3 sm:pr-4 rounded hover:bg-muted/40"
           title={`Open ${venueName}`}
         >
           {img?.url ? (

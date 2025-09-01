@@ -28,9 +28,7 @@ export default function VenueCard({
   if (layout === 'row') {
     // Compact row used in Profile -> My venues
     return (
-      <div
-        className={`flex items-center gap-4 rounded border border-border-light bg-card p-4 shadow ${className}`}
-      >
+      <div className={`flex items-center gap-4 card ${className}`}>
         {img?.url ? (
           <img
             src={img.url}

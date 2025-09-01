@@ -92,7 +92,7 @@ export default function BookingsPage() {
         <>
           <h2 className="text-lg font-semibold">Upcoming</h2>
           {upcoming.length ? (
-            <ul className="grid gap-4 lg:grid-cols-2">
+            <ul className="grid gap-4 xl:grid-cols-2">
               {upcoming.map((b) => (
                 <li key={b.id}>
                   <BookingCard
@@ -110,7 +110,7 @@ export default function BookingsPage() {
 
           <h2 className="text-lg font-semibold mt-6">Past</h2>
           {past.length ? (
-            <ul className="grid gap-4 lg:grid-cols-2">
+            <ul className="grid gap-4 xl:grid-cols-2">
               {past.map((b) => (
                 <li
                   key={b.id}
