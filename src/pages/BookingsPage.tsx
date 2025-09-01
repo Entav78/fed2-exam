@@ -92,7 +92,7 @@ export default function BookingsPage() {
         <>
           <h2 className="text-lg font-semibold">Upcoming</h2>
           {upcoming.length ? (
-            <ul className="grid gap-4 xl:grid-cols-2">
+            <ul className="grid gap-4 xl:grid-cols-2 auto-rows-fr">
               {upcoming.map((b) => (
                 <li key={b.id}>
                   <BookingCard

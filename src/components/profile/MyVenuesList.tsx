@@ -1,4 +1,3 @@
-// src/components/profile/MyVenuesList.tsx
 import { useEffect, useState } from 'react';
 
 import VenueCard from '@/components/venues/VenueCard';
@@ -45,12 +44,21 @@ export default function MyVenuesList() {
 
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <ul className="grid gap-4 xl:grid-cols-2 auto-rows-fr list-none p-0 m-0">
         {visible.map((v) => (
-          <VenueCard key={v.id} venue={v} layout="row" showManage />
+          <li key={v.id}>
+            {/* row layout + consistent height */}
+            <VenueCard venue={v} layout="row" showManage className="min-h-[112px]" />
+          </li>
         ))}
-        <NewVenueTile />
-      </div>
+
+        <li>
+          {/* Give the tile the same visual box as the row cards */}
+          <div className="card min-h-[112px] flex items-center justify-center">
+            <NewVenueTile />
+          </div>
+        </li>
+      </ul>
 
       {rows.length > LIMIT && (
         <div className="mt-3">

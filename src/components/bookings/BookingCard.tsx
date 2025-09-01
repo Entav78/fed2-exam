@@ -21,7 +21,7 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
 
   return (
     <div
-      className={`card flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 ${
+      className={`card h-full min-h-[112px] flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 ${
         isPast ? 'opacity-80' : ''
       }`}
     >
@@ -29,16 +29,11 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
       {venueId ? (
         <Link
           to={`/venues/${venueId}`}
-          className="flex flex-1 min-w-0 items-center gap-4 p-2 pr-3 sm:pr-4 rounded hover:bg-muted/40"
+          className="flex flex-1 min-w-0 items-center gap-4 -m-2 p-2 rounded hover:bg-muted/40"
           title={`Open ${venueName}`}
         >
           {img?.url ? (
-            <img
-              src={img.url}
-              alt={img.alt || venueName}
-              className="h-16 w-16 rounded object-cover"
-              loading="lazy"
-            />
+            <img src={img.url} alt={img.alt || venueName} className="thumb" loading="lazy" />
           ) : (
             <div className="h-16 w-16 rounded bg-muted" />
           )}

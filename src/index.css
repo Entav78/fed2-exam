@@ -23,4 +23,9 @@
   .input-field {
     @apply w-full rounded-md border border-border-light px-3 py-2;
   }
+
+  /* new: consistent thumbnails everywhere */
+  .thumb {
+    @apply h-16 w-16 rounded object-cover;
+  }
 }
