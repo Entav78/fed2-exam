@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
@@ -48,7 +48,28 @@ export default function MyBookingsList() {
   }, [fetchMine]);
 
   const LIMIT = 4;
-  const visible = rows.slice(0, LIMIT);
+
+  // Stable local-midnight boundary (only computed once per mount)
+  const todayMidnightMs = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }, []);
+
+  const upcomingOnly = useMemo(
+    () =>
+      rows
+        .filter((b) => new Date(b.dateTo).getTime() > todayMidnightMs)
+        .sort((a, b) => new Date(a.dateFrom).getTime() - new Date(b.dateFrom).getTime()),
+    [rows, todayMidnightMs],
+  );
+
+  const visible = useMemo(() => upcomingOnly.slice(0, LIMIT), [upcomingOnly]);
+
+  // Optional clearer empty state
+  if (!upcomingOnly.length) {
+    return <p className="text-sm text-muted">No upcoming bookings.</p>;
+  }
 
   async function cancel(id: string) {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
@@ -69,7 +90,7 @@ export default function MyBookingsList() {
 
   if (loading) return <p className="text-sm text-muted">Loading bookings…</p>;
   if (error) return <p className="text-danger text-sm">Error: {error}</p>;
-  if (!rows.length) return <p className="text-sm text-muted">You haven’t made any bookings yet.</p>;
+  if (!upcomingOnly.length) return <p className="text-sm text-muted">No upcoming bookings.</p>;
 
   return (
     <>

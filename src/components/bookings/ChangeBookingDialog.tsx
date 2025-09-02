@@ -1,21 +1,23 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import toast from 'react-hot-toast';
 
 import { Button } from '@/components/ui/Button';
 import BookingCalendar from '@/components/venues/BookingCalendar';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { type Booking, createBooking, deleteBooking } from '@/lib/api/bookings';
 import { getVenueById, type Venue } from '@/lib/api/venues';
 import { dateOnly } from '@/utils/date';
 
 type Props = {
   booking: Booking;
-  venueId: string; // <-- required (no non-null assertions!)
+  venueId: string;
   onClose: () => void;
-  onUpdated?: () => void; // parent can refetch
+  onUpdated?: () => void;
 };
 
 export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdated }: Props) {
+  const panelRef = useRef<HTMLDivElement>(null);
   const [venue, setVenue] = useState<Venue | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -27,9 +29,16 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
     to: new Date(booking.dateTo),
   }));
 
-  const handleSelect = (r: DateRange | undefined) => setRange(r);
+  const handleSelect = (r: DateRange | undefined) => {
+    // optional nicety: normalize reversed clicks (keeps UX tidy, no logic change)
+    if (r?.from && r?.to && r.to < r.from) setRange({ from: r.to, to: r.from });
+    else setRange(r);
+  };
 
-  // fetch fresh venue (+bookings) for availability check
+  // a11y: trap focus inside dialog, close on ESC, restore focus on close
+  useFocusTrap(panelRef, { active: true, onEscape: onClose, restoreFocus: true });
+  const titleId = 'change-booking-title';
+
   useEffect(() => {
     let active = true;
     (async () => {
@@ -55,15 +64,16 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
     (from: Date, to: Date, g: number) => {
       if (!venue) return false;
       if (g < 1 || g > venue.maxGuests) return false;
+
       const start = +from;
       const end = +to;
       if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return false;
 
       const overlaps = (venue.bookings ?? [])
-        .filter((b) => b.id !== booking.id) // ignore current booking
+        .filter((b) => b.id !== booking.id)
         .some((b) => {
           const bStart = Date.parse(b.dateFrom);
-          const bEnd = Date.parse(b.dateTo); // treat as checkout (exclusive)
+          const bEnd = Date.parse(b.dateTo); // checkout (exclusive)
           return start < bEnd && bStart < end;
         });
 
@@ -79,9 +89,7 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
   }, [venue, range, guests, check]);
 
   async function save() {
-    if (!venue) return;
-    if (!range?.from || !range?.to) return;
-    if (!canBook) return;
+    if (!venue || !range?.from || !range?.to || !canBook) return;
 
     setBusy(true);
     try {
@@ -110,12 +118,29 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
     [venue?.bookings, booking.id],
   );
 
+  const nights =
+    range?.from && range?.to ? Math.max(1, Math.round((+range.to - +range.from) / 86400000)) : 0;
+
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4">
-      <div className="w-full max-w-lg rounded-lg bg-white p-4 shadow-xl">
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }} // overlay click closes
+    >
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        className="w-full max-w-lg rounded-lg bg-white p-4 shadow-xl outline-none"
+      >
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Change booking</h3>
-          <button onClick={onClose} className="text-sm underline">
+          <h3 id={titleId} className="text-lg font-semibold">
+            Change booking
+          </h3>
+          <button type="button" onClick={onClose} className="text-sm underline">
             Close
           </button>
         </div>
@@ -132,26 +157,37 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
 
             <BookingCalendar bookings={bookingsLite} selected={range} onSelect={handleSelect} />
 
-            <div className="mt-3 flex items-center justify-between">
-              <button
-                type="button"
-                className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
-                onClick={() => setRange(undefined)}
-                disabled={!range?.from && !range?.to}
-              >
-                Clear dates
-              </button>
+            {/* Action bar (Option A) */}
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm text-muted" aria-live="polite">
+                {range?.from && range?.to
+                  ? `${nights} night${nights > 1 ? 's' : ''} selected`
+                  : 'Pick check-in and check-out'}
+              </div>
 
-              {/* optional helper text */}
-              <span className="text-sm text-muted">
-                {!range?.from
-                  ? 'Pick check-in and check-out'
-                  : !range?.to
-                    ? 'Pick check-out date'
-                    : undefined}
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRange(undefined)}
+                  className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted focus:outline-none focus:ring-2 focus:ring-brand/50"
+                  title="Clear selected dates"
+                >
+                  <span aria-hidden>🧹</span>
+                  <span className="ml-1">Clear dates</span>
+                </button>
+
+                <Button
+                  onClick={save}
+                  disabled={busy || !range?.from || !range?.to || !canBook}
+                  isLoading={busy}
+                  variant="form"
+                >
+                  Save changes
+                </Button>
+              </div>
             </div>
 
+            {/* Guests input */}
             <div className="mt-3 flex items-center gap-3">
               <label className="text-sm">
                 Guests
@@ -167,16 +203,6 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
                 />
                 <span className="ml-2 opacity-70">/ max {venue.maxGuests}</span>
               </label>
-
-              <Button
-                onClick={save}
-                disabled={!canBook || busy}
-                isLoading={busy}
-                className="ml-auto"
-                variant="form"
-              >
-                Save changes
-              </Button>
             </div>
 
             {!canBook && (

@@ -10,8 +10,8 @@ import { useAuthStore } from '@/store/authStore';
 function byDateFromAsc(a: Booking, b: Booking) {
   return new Date(a.dateFrom).getTime() - new Date(b.dateFrom).getTime();
 }
-function isPast(b: Booking, now = new Date()) {
-  return new Date(b.dateTo).getTime() < now.getTime();
+function isPastLocal(b: Booking, todayMidnight: Date) {
+  return new Date(b.dateTo).getTime() <= todayMidnight.getTime();
 }
 
 export default function BookingsPage() {
@@ -23,6 +23,13 @@ export default function BookingsPage() {
 
   // derive a primitive
   const username = user?.name ?? '';
+
+  // local midnight boundary (stable for memo deps)
+  const todayMidnight = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
 
   useEffect(() => {
     if (!username) return;
@@ -46,14 +53,14 @@ export default function BookingsPage() {
   }, [username]);
 
   const upcoming = useMemo(() => {
-    const now = new Date();
-    return rows.filter((b) => !isPast(b, now));
-  }, [rows]);
+    return rows.filter((b) => !isPastLocal(b, todayMidnight)).sort(byDateFromAsc); // soonest first
+  }, [rows, todayMidnight]);
 
   const past = useMemo(() => {
-    const now = new Date();
-    return rows.filter((b) => isPast(b, now));
-  }, [rows]);
+    return rows
+      .filter((b) => isPastLocal(b, todayMidnight))
+      .sort((a, b) => new Date(b.dateTo).getTime() - new Date(a.dateTo).getTime()); // most recent first
+  }, [rows, todayMidnight]);
 
   const [editing, setEditing] = useState<Booking | null>(null);
 
@@ -119,13 +126,10 @@ export default function BookingsPage() {
 
           <h2 className="text-lg font-semibold mt-6">Past</h2>
           {past.length ? (
-            <ul className="grid gap-4 xl:grid-cols-2">
+            <ul className="grid gap-4 xl:grid-cols-2 auto-rows-fr">
               {past.map((b) => (
-                <li
-                  key={b.id}
-                  className="flex items-center gap-4 rounded border border-border-light bg-card p-3 opacity-80"
-                >
-                  {/* …your past item content… */}
+                <li key={b.id}>
+                  <BookingCard booking={b} />
                 </li>
               ))}
             </ul>
