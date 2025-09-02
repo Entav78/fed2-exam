@@ -15,6 +15,7 @@ import RootError from '@/pages/RootError';
 import VenueDetailPage from '@/pages/VenueDetailPage';
 import { RequireAuth, RequireManager } from '@/routes/guards';
 
+import 'leaflet/dist/leaflet.css';
 import './index.css';
 
 const router = createBrowserRouter([

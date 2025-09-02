@@ -1,7 +1,9 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
 import { MiniButton } from '@/components/ui/MiniButton';
 import type { Booking } from '@/lib/api/bookings';
+import { getVenueImage, handleImgErrorToPlaceholder } from '@/utils/venueImage';
 
 type Props = {
   booking: Booking;
@@ -11,13 +13,21 @@ type Props = {
 };
 
 export default function BookingCard({ booking, onCancel, onChangeDates, busy = false }: Props) {
-  const isPast = new Date(booking.dateTo).getTime() < Date.now();
-  const img = booking.venue?.media?.[0];
+  const todayMidnightMs = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }, []);
+
+  const isPast = new Date(booking.dateTo).getTime() <= todayMidnightMs;
   const city = booking.venue?.location?.city;
   const start = new Date(booking.dateFrom);
   const end = new Date(booking.dateTo);
   const venueId = booking.venue?.id;
   const venueName = booking.venue?.name ?? 'Venue';
+
+  // ✅ One source of truth for the thumbnail (handles placeholder automatically)
+  const { src, alt } = getVenueImage(booking.venue);
 
   return (
     <div
@@ -25,18 +35,20 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
         isPast ? 'opacity-80' : ''
       }`}
     >
-      {/* Clickable content area */}
       {venueId ? (
         <Link
           to={`/venues/${venueId}`}
           className="flex flex-1 min-w-0 items-center gap-4 -m-2 p-2 rounded hover:bg-muted/40"
           title={`Open ${venueName}`}
         >
-          {img?.url ? (
-            <img src={img.url} alt={img.alt || venueName} className="thumb" loading="lazy" />
-          ) : (
-            <div className="h-16 w-16 rounded bg-muted" />
-          )}
+          <img
+            src={src}
+            alt={alt}
+            className="thumb"
+            loading="lazy"
+            decoding="async"
+            onError={handleImgErrorToPlaceholder}
+          />
 
           <div className="min-w-0">
             <p className="font-semibold leading-tight line-clamp-1 hover:underline">{venueName}</p>
@@ -45,7 +57,6 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
               <span className="whitespace-nowrap">
                 {start.toLocaleDateString()} → {end.toLocaleDateString()}
               </span>
-              {/* separator shows only when there’s room */}
               <span className="hidden sm:inline-block">•</span>
               <span className="whitespace-nowrap">Guests {booking.guests}</span>
             </div>
@@ -53,16 +64,14 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
         </Link>
       ) : (
         <>
-          {img?.url ? (
-            <img
-              src={img.url}
-              alt={img.alt || venueName}
-              className="h-16 w-16 rounded object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <div className="h-16 w-16 rounded bg-muted" />
-          )}
+          <img
+            src={src}
+            alt={alt}
+            className="thumb"
+            loading="lazy"
+            decoding="async"
+            onError={handleImgErrorToPlaceholder}
+          />
           <div className="min-w-0 flex-1">
             <p className="mt-1 text-sm flex flex-wrap items-center gap-x-2">{venueName}</p>
             {city && <p className="text-sm text-muted">{city}</p>}
@@ -78,7 +87,6 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
         {!!onChangeDates && !!venueId && !isPast && (
           <MiniButton onClick={() => onChangeDates(booking)}>Change dates</MiniButton>
         )}
-
         {!isPast && onCancel && (
           <MiniButton onClick={() => onCancel(booking.id)} disabled={busy}>
             {busy ? 'Cancelling…' : 'Cancel'}

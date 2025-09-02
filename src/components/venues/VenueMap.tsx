@@ -1,4 +1,5 @@
-import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
+import { useEffect } from 'react';
+import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import * as L from 'leaflet';
 
 // Simple inline SVG pin (brown to match your header/brand vibe)
@@ -24,15 +25,35 @@ type Props = {
   zoom?: number;
 };
 
+function ResizeOnMount() {
+  const map = useMap();
+  useEffect(() => {
+    const id = setTimeout(() => map.invalidateSize(), 0); // first paint
+    const onResize = () => map.invalidateSize(); // window resizes
+    window.addEventListener('resize', onResize);
+    return () => {
+      clearTimeout(id);
+      window.removeEventListener('resize', onResize);
+    };
+  }, [map]);
+  return null;
+}
+
 export default function VenueMap({ lat, lng, name = 'Venue', height = 300, zoom = 13 }: Props) {
-  const position: [number, number] = [lat, lng]; // ✅ define it here
+  const position: [number, number] = [lat, lng];
 
   return (
     <div
       className="w-full overflow-hidden rounded-lg border border-border-light"
       style={{ height }}
     >
-      <MapContainer center={position} zoom={zoom} style={{ height: '100%', width: '100%' }}>
+      <MapContainer
+        key={`${lat},${lng}`}
+        center={position}
+        zoom={zoom}
+        scrollWheelZoom={false}
+        className="h-full w-full"
+      >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -40,6 +61,7 @@ export default function VenueMap({ lat, lng, name = 'Venue', height = 300, zoom 
         <Marker position={position} icon={pinIcon}>
           <Popup>{name}</Popup>
         </Marker>
+        <ResizeOnMount />
       </MapContainer>
     </div>
   );

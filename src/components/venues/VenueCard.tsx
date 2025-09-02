@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 
 import type { Venue } from '@/lib/api/venues';
+import { getVenueImage, handleImgErrorToPlaceholder } from '@/utils/venueImage';
 
 type Props = {
   venue: Venue;
@@ -19,22 +20,27 @@ export default function VenueCard({
   manageHref,
   className = '',
 }: Props) {
-  const img = venue.media?.[0];
   const city = venue.location?.city;
+
+  // Size hints only affect static map/placeholder; real photos are unaffected.
+  const imgOpts =
+    layout === 'row'
+      ? { width: 128, height: 128, zoom: 14 }
+      : { width: 800, height: 320, zoom: 13 };
+
+  const { src, alt } = getVenueImage(venue, 0, imgOpts);
 
   if (layout === 'row') {
     return (
-      <div className={`card min-h-[112px] flex items-center gap-4 ${className}`}>
-        {img?.url ? (
-          <img
-            src={img.url}
-            alt={img.alt || venue.name}
-            className="h-16 w-16 rounded object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="h-16 w-16 rounded bg-muted" />
-        )}
+      <div className={`card min-h-[112px] flex items-center gap-4 ${className ?? ''}`}>
+        <img
+          src={src}
+          alt={alt}
+          className="thumb" // h-16 w-16 rounded object-cover
+          loading="lazy"
+          decoding="async"
+          onError={handleImgErrorToPlaceholder}
+        />
 
         <div className="min-w-0 flex-1">
           <p className="line-clamp-1 font-semibold leading-tight">{venue.name}</p>
@@ -65,33 +71,31 @@ export default function VenueCard({
     );
   }
 
+  // grid
   return (
     <Link
       to={`/venues/${venue.id}`}
       aria-label={`Open ${venue.name}`}
       className={`card h-full flex flex-col transition cursor-pointer
-                hover:shadow-lg hover:-translate-y-[1px]
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50
-                group ${className}`}
+                  hover:shadow-lg hover:-translate-y-[1px]
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50
+                  group ${className}`}
     >
-      {img?.url ? (
-        <img
-          src={img.url}
-          alt={img.alt || venue.name}
-          className="h-40 w-full object-cover"
-          loading="lazy"
-        />
-      ) : (
-        <div className="h-40 w-full bg-muted" />
-      )}
+      <img
+        src={src}
+        alt={alt}
+        className="h-40 w-full object-cover"
+        loading="lazy"
+        decoding="async"
+        onError={handleImgErrorToPlaceholder}
+      />
 
       <div className="p-4">
         <h3 className="text-lg font-semibold group-hover:underline">{venue.name}</h3>
         {city && <p className="text-sm text-muted">{city}</p>}
         <p className="text-sm text-muted">Max guests: {venue.maxGuests}</p>
-        <p className="mt-2 font-bold">NOK {venue.price} / night</p>
+        <p className="mt-2 font-bold">{nok.format(venue.price)} / night</p>
         {venue.owner?.name && <p className="text-xs text-muted mt-1">Host: {venue.owner.name}</p>}
-        {/* no button/link here */}
       </div>
     </Link>
   );
