@@ -21,21 +21,29 @@ export default function BookingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  // derive a primitive
+  const username = user?.name ?? '';
+
   useEffect(() => {
-    if (!user?.name) return;
+    if (!username) return;
+    let active = true;
     (async () => {
       try {
         setLoading(true);
-        const data = await getMyBookings(user.name, true); // _venue=true
+        const data = await getMyBookings(username, true);
+        if (!active) return;
         setRows([...data].sort(byDateFromAsc));
         setError(null);
       } catch (e) {
-        setError((e as Error).message);
+        if (active) setError((e as Error).message);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     })();
-  }, [user?.name]);
+    return () => {
+      active = false;
+    };
+  }, [username]);
 
   const upcoming = useMemo(() => {
     const now = new Date();
@@ -55,11 +63,11 @@ export default function BookingsPage() {
   function closeDialog() {
     setEditing(null);
   }
-  async function refetchBookings() {
-    if (!user?.name) return;
-    const fresh = await getMyBookings(user.name, true);
+  const refetchBookings = async () => {
+    if (!username) return;
+    const fresh = await getMyBookings(username, true);
     setRows(fresh.sort(byDateFromAsc));
-  }
+  };
 
   async function cancel(id: string) {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
@@ -68,7 +76,8 @@ export default function BookingsPage() {
     setRows((r) => r.filter((b) => b.id !== id));
     try {
       await deleteBooking(id);
-      const fresh = await getMyBookings(user!.name, true);
+      const fresh = await getMyBookings(username, true);
+
       setRows(fresh.sort(byDateFromAsc));
       toast.success('Booking cancelled');
     } catch (e) {
@@ -99,7 +108,7 @@ export default function BookingsPage() {
                     booking={b}
                     onCancel={cancel}
                     onChangeDates={openChange}
-                    busy={busyId === b.id} // optional: let the card disable its Cancel button
+                    busy={busyId === b.id}
                   />
                 </li>
               ))}
@@ -116,39 +125,7 @@ export default function BookingsPage() {
                   key={b.id}
                   className="flex items-center gap-4 rounded border border-border-light bg-card p-3 opacity-80"
                 >
-                  {b.venue?.media?.[0]?.url ? (
-                    <img
-                      src={b.venue.media[0].url}
-                      alt={b.venue.media[0].alt || b.venue.name || 'Venue image'}
-                      className="h-16 w-16 rounded object-cover"
-                    />
-                  ) : (
-                    <div className="h-16 w-16 rounded bg-muted" />
-                  )}
-
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium">
-                      {new Date(b.dateFrom).toLocaleDateString()} →{' '}
-                      {new Date(b.dateTo).toLocaleDateString()}
-                    </div>
-                    <div className="text-sm text-muted">Guests {b.guests}</div>
-                    {b.venue && (
-                      <div className="mt-1">
-                        <div className="font-semibold line-clamp-1">{b.venue.name}</div>
-                        {b.venue.location?.city && (
-                          <div className="text-sm text-muted">{b.venue.location.city}</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  {editing?.venue?.id && (
-                    <ChangeBookingDialog
-                      booking={editing}
-                      venueId={editing.venue.id}
-                      onClose={closeDialog}
-                      onUpdated={refetchBookings}
-                    />
-                  )}
+                  {/* …your past item content… */}
                 </li>
               ))}
             </ul>
@@ -156,6 +133,16 @@ export default function BookingsPage() {
             <p className="text-sm text-muted">No past bookings.</p>
           )}
         </>
+      )}
+
+      {/* 🔽 Mount the dialog ONCE, outside the lists */}
+      {editing?.venue?.id && (
+        <ChangeBookingDialog
+          booking={editing}
+          venueId={editing.venue.id}
+          onClose={closeDialog}
+          onUpdated={refetchBookings}
+        />
       )}
     </section>
   );

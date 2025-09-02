@@ -132,6 +132,26 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
 
             <BookingCalendar bookings={bookingsLite} selected={range} onSelect={handleSelect} />
 
+            <div className="mt-3 flex items-center justify-between">
+              <button
+                type="button"
+                className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
+                onClick={() => setRange(undefined)}
+                disabled={!range?.from && !range?.to}
+              >
+                Clear dates
+              </button>
+
+              {/* optional helper text */}
+              <span className="text-sm text-muted">
+                {!range?.from
+                  ? 'Pick check-in and check-out'
+                  : !range?.to
+                    ? 'Pick check-out date'
+                    : undefined}
+              </span>
+            </div>
+
             <div className="mt-3 flex items-center gap-3">
               <label className="text-sm">
                 Guests
