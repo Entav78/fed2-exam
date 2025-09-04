@@ -1,83 +1,99 @@
 // src/hooks/useGeocodedStaticMap.ts
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { Venue } from '@/lib/api/venues';
-import { geocodeAddress } from '@/lib/geocode';
+import { geocodeFromLocation, getCachedForLocation } from '@/lib/geocode';
+import type { VenueLocation } from '@/types/common';
+import { isLikelyValidCoords } from '@/utils/geo';
 import { buildStaticMapUrl, getVenueImage, PLACEHOLDER_IMG } from '@/utils/venueImage';
 
 type Opts = { width?: number; height?: number; zoom?: number };
 
 export function useGeocodedStaticMap(
-  venue: Pick<Venue, 'id' | 'name' | 'media' | 'location'>,
+  venue: Pick<Venue, 'id' | 'name' | 'location' | 'media'>,
   index = 0,
-  opts: Opts = {},
+  opts?: Opts,
 ) {
-  const { width = 400, height = 240, zoom = 13 } = opts;
+  // 1) Derive stable dimensions from opts
+  const dims = useMemo(
+    () => ({
+      w: opts?.width ?? 400,
+      h: opts?.height ?? 240,
+      z: opts?.zoom ?? 13,
+    }),
+    [opts?.width, opts?.height, opts?.zoom],
+  );
 
-  // base (photo → static map if coords already on venue in PROD → SVG)
+  // 2) Build base image using dims
   const base = useMemo(
-    () => getVenueImage(venue, index, { width, height, zoom }),
-    [venue, index, width, height, zoom],
+    () => getVenueImage(venue, index, { width: dims.w, height: dims.h, zoom: dims.z }),
+    [venue, index, dims.w, dims.h, dims.z],
   );
 
   const [src, setSrc] = useState(base.src);
   const [alt, setAlt] = useState(base.alt);
-
-  // primitive deps (avoid object deps)
-  const name = venue.name ?? '';
-  const address = venue.location?.address ?? '';
-  const city = venue.location?.city ?? '';
-  const country = venue.location?.country ?? '';
+  const ioRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
-    // reset to the base every time inputs change
     setSrc(base.src);
     setAlt(base.alt);
+  }, [base.src, base.alt]);
 
-    // Only try geocode in PROD and only if we're still on the SVG placeholder
-    if (!import.meta.env.PROD) return;
-    if (base.src !== PLACEHOLDER_IMG) return;
+  const loc: VenueLocation | undefined = venue.location as VenueLocation | undefined;
 
-    // Build query candidates from most to least specific
-    const tries = Array.from(
-      new Set(
-        [
-          [address, city, country].filter(Boolean).join(', '),
-          [city, country].filter(Boolean).join(', '),
-          country || '',
-          name &&
-            [name, [city, country].filter(Boolean).join(', ') || ''].filter(Boolean).join(', '),
-          name || '',
-        ]
-          .map((s) => s.trim())
-          .filter(Boolean),
-      ),
+  useEffect(() => {
+    if (src !== PLACEHOLDER_IMG) return; // already have photo or static map
+    if (!loc) return;
+
+    // a) cached coords?
+    const cached = getCachedForLocation(loc);
+    if (cached) {
+      setSrc(buildStaticMapUrl(cached.lat, cached.lng, dims.w, dims.h, dims.z));
+      return;
+    }
+
+    // b) API already has coords?
+    const hasApiCoords = isLikelyValidCoords(loc.lat ?? undefined, loc.lng ?? undefined);
+    if (hasApiCoords) return;
+
+    // c) Geocode lazily when visible
+    const el = ioRef.current;
+    if (!el) return;
+
+    let active = true;
+    const run = async () => {
+      const hit = await geocodeFromLocation(loc);
+      if (active && hit) {
+        setSrc(buildStaticMapUrl(hit.lat, hit.lng, dims.w, dims.h, dims.z));
+      }
+    };
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          run();
+          io.disconnect();
+        }
+      },
+      { rootMargin: '200px' },
     );
 
-    if (!tries.length) return;
-
-    let cancelled = false;
-
-    (async () => {
-      const keyPresent = Boolean(import.meta.env.VITE_GEOAPIFY_KEY);
-      if (!keyPresent) return; // bail gracefully if key missing
-
-      for (const q of tries) {
-        const hit = await geocodeAddress(q);
-        if (cancelled) return;
-        if (hit) {
-          setSrc(buildStaticMapUrl(hit.lat, hit.lng, width, height, zoom));
-          setAlt(`Map of ${name || 'venue'}`);
-          return;
-        }
-      }
-      // keep SVG if all fail
-    })();
-
+    io.observe(el);
     return () => {
-      cancelled = true;
+      active = false;
+      io.disconnect();
     };
-  }, [base.src, base.alt, name, address, city, country, width, height, zoom]);
+  }, [
+    src,
+    loc,
+    venue.id,
+    venue.location?.address,
+    venue.location?.city,
+    venue.location?.country,
+    dims.w,
+    dims.h,
+    dims.z,
+  ]);
 
-  return { src, alt };
+  return { src, alt, ioRef };
 }

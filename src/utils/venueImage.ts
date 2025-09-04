@@ -90,25 +90,18 @@ function hasValidCoords(coords: { lat: number; lng: number } | null) {
 // good: no manual encode, decimals with '.'
 
 // src/utils/venueImage.ts (or wherever you keep it)
-export function buildStaticMapUrl(lat: number, lng: number, w = 800, h = 320, z = 13): string {
-  const key = (import.meta.env.VITE_GEOAPIFY_KEY || '').trim();
+export function buildStaticMapUrl(lat: number, lng: number, w = 400, h = 240, z = 13) {
+  const key = import.meta.env.VITE_GEOAPIFY_KEY;
   if (!key) return PLACEHOLDER_IMG;
-
-  const lon = Number(lng).toFixed(6); // NOTE: Geoapify wants lon,lat order
+  const lon = Number(lng).toFixed(6);
   const la = Number(lat).toFixed(6);
-
-  const url = new URL('https://maps.geoapify.com/v1/staticmap');
-  url.searchParams.set('style', 'osm-carto');
-  url.searchParams.set('width', String(Math.round(w)));
-  url.searchParams.set('height', String(Math.round(h)));
-  url.searchParams.set('center', `lonlat:${lon},${la}`);
-  url.searchParams.set('zoom', String(Math.round(z)));
-
-  // Valid marker format. Order here is important for their validator.
-  url.searchParams.set('marker', `lonlat:${lon},${la};size:48;color:#53423C`);
-
-  url.searchParams.set('apiKey', key);
-  return url.toString();
+  const color = '%2353423C'; // #53423C encoded
+  return (
+    `https://maps.geoapify.com/v1/staticmap?style=osm-carto&width=${w}&height=${h}` +
+    `&center=lonlat:${lon},${la}&zoom=${z}` +
+    `&marker=lonlat:${lon},${la};size:48;color:${color}` +
+    `&apiKey=${key}`
+  );
 }
 
 // Option B: URLSearchParams (also safe; it won't encode the ':')
@@ -137,10 +130,11 @@ export function getVenueImage(venue: WithMedia, index = 0, opts?: GetVenueImageO
   if (url) return { src: url, alt };
 
   // a) API coords?
+  // a) API coords?
   let coords = getLatLng(venue);
 
-  // b) or cached geocode coords (read-only)
-  if (!coords) {
+  // b) if coords are missing OR invalid (e.g. 0,0), try cached geocode
+  if (!hasValidCoords(coords)) {
     const cached = getCachedForLocation(venue?.location as VenueLocation | undefined);
     if (cached) coords = { lat: cached.lat, lng: cached.lng };
   }
