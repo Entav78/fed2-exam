@@ -1,6 +1,7 @@
+// src/lib/geocode.ts
 import type { VenueLocation } from '@/types/common';
 
-// Public shape returned by geocoders
+// What we return from geocoders and the cache
 export type GeocodeHit = { lat: number; lng: number; label?: string };
 
 // ---------------------------------------------------------------------------
@@ -54,7 +55,7 @@ function writeCache(key: string, v: GeocodeHit) {
   localStorage.setItem(key, JSON.stringify({ v, t: Date.now() }));
 }
 
-// Pull Geoapify "properties" safely from unknown JSON
+// Safely read Geoapify's first feature properties from unknown JSON
 function firstFeatureProps(json: unknown): Record<string, unknown> | null {
   if (!json || typeof json !== 'object') return null;
   const features = (json as { features?: unknown }).features;
@@ -67,8 +68,13 @@ function firstFeatureProps(json: unknown): Record<string, unknown> | null {
 }
 
 // ---------------------------------------------------------------------------
-// Geoapify-backed geocoders
+// Public API
 // ---------------------------------------------------------------------------
+
+/**
+ * Geocode a freeform address string via Geoapify.
+ * Caches results in localStorage using a normalized key.
+ */
 export async function geocodeAddress(q: string): Promise<GeocodeHit | null> {
   const API_KEY = import.meta.env.VITE_GEOAPIFY_KEY as string | undefined;
   const normalized = normalize(q);
@@ -80,7 +86,7 @@ export async function geocodeAddress(q: string): Promise<GeocodeHit | null> {
 
   const url =
     `https://api.geoapify.com/v1/geocode/search` +
-    `?text=${encodeURIComponent(normalized)}&limit=1&apiKey=${API_KEY}`;
+    `?text=${encodeURIComponent(normalized)}&limit=1&lang=en&apiKey=${API_KEY}`;
 
   try {
     const res = await fetch(url);
@@ -103,6 +109,7 @@ export async function geocodeAddress(q: string): Promise<GeocodeHit | null> {
       p.municipality ??
       p.county ??
       p.state;
+
     const country = p.country;
     const formatted = p.formatted ?? p.name;
 
@@ -120,7 +127,9 @@ export async function geocodeAddress(q: string): Promise<GeocodeHit | null> {
   }
 }
 
-// Try: "address, city, country" → "city, country" → "country"
+/**
+ * Try several structured variants: "address, city, country" → "city, country" → "country".
+ */
 export async function geocodeFromLocation(loc?: VenueLocation): Promise<GeocodeHit | null> {
   if (!loc) return null;
 
@@ -136,6 +145,36 @@ export async function geocodeFromLocation(loc?: VenueLocation): Promise<GeocodeH
   for (const q of unique) {
     const hit = await geocodeAddress(q);
     if (hit) return hit;
+  }
+  return null;
+}
+
+/**
+ * Read a cached geocode (if present) for a venue's {address, city, country}
+ * without doing any network request.
+ */
+export function getCachedForLocation(loc?: VenueLocation): GeocodeHit | null {
+  if (!loc) return null;
+  const normalized = [loc.address, loc.city, loc.country]
+    .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+    .map((s) => s.trim())
+    .join(', ')
+    .toLowerCase();
+  if (!normalized) return null;
+
+  const key = `geocode:${normalized}`;
+  const raw = localStorage.getItem(key);
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw) as {
+      v: { lat: number; lng: number; label?: string };
+      t: number;
+    };
+    const { lat, lng, label } = parsed.v || {};
+    if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng, label };
+  } catch {
+    /* ignore */
   }
   return null;
 }

@@ -1,6 +1,9 @@
 // src/utils/venueImage.ts
 import type { SyntheticEvent } from 'react';
 
+import { getCachedForLocation } from '@/lib/geocode';
+import type { VenueLocation } from '@/types/common';
+
 // ---------- Base placeholder (inline SVG, no network) ----------
 export const PLACEHOLDER_IMG = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
   `<svg xmlns='http://www.w3.org/2000/svg' width='400' height='240'>
@@ -16,6 +19,9 @@ type MediaItem = { url?: string | null; alt?: string | null } | null | undefined
 
 type LocationLike =
   | Partial<{
+      address: string | null;
+      city: string | null;
+      country: string | null;
       lat: number | string | null;
       lng: number | string | null;
       lon: number | string | null;
@@ -64,10 +70,8 @@ function coalesceNumber(...vals: NumLike[]): number | undefined {
 function getLatLng(venue: WithMedia) {
   const loc = venue?.location;
   if (!loc) return null;
-
   const lat = coalesceNumber(loc.lat, loc.latitude);
   const lng = coalesceNumber(loc.lng, loc.lon, loc.long, loc.longitude);
-
   return lat !== undefined && lng !== undefined ? { lat, lng } : null;
 }
 
@@ -75,22 +79,26 @@ function hasValidCoords(coords: { lat: number; lng: number } | null) {
   if (!coords) return false;
   const { lat, lng } = coords;
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
-  // avoid ocean thumbnails / bad data
-  if (lat === 0 && lng === 0) return false;
-  // optional sanity bounds
+  if (lat === 0 && lng === 0) return false; // avoid (0,0)
   if (lat < -85 || lat > 85 || lng < -180 || lng > 180) return false;
   return true;
 }
 
-function staticMapUrlOSM(lat: number, lng: number, w = 400, h = 240, zoom = 13) {
-  // Public demo service; fine for light usage. Keep OSM attribution on your page.
-  return `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=${zoom}&size=${w}x${h}&markers=${lat},${lng},lightblue1`;
+// Geoapify static map URL (uses your VITE_GEOAPIFY_KEY)
+export function buildStaticMapUrl(lat: number, lng: number, w = 400, h = 240, z = 13): string {
+  const key = import.meta.env.VITE_GEOAPIFY_KEY;
+  if (key) {
+    const center = `lonlat:${lng},${lat}`;
+    const marker = `lonlat:${lng},${lat};type:material;color:%2353423C;size:medium`;
+    return `https://maps.geoapify.com/v1/staticmap?style=osm-carto&width=${w}&height=${h}&center=${center}&zoom=${z}&marker=${marker}&apiKey=${key}`;
+  }
+  return PLACEHOLDER_IMG;
 }
 
 // ---------- Public API ----------
 /**
  * Returns {src, alt} for a venue image.
- * Order: media[0] → static map (if coords) → inline placeholder.
+ * Order: media[0] → static map (if coords or cached geocode) → inline placeholder.
  */
 export function getVenueImage(venue: WithMedia, index = 0, opts?: GetVenueImageOpts) {
   const url = venue?.media?.[index]?.url?.trim();
@@ -99,26 +107,57 @@ export function getVenueImage(venue: WithMedia, index = 0, opts?: GetVenueImageO
     (venue?.name ? String(venue.name) : undefined) ||
     'Venue image';
 
-  // Real photo available
   if (url) return { src: url, alt };
 
-  // 2) Static map ONLY in production (avoids noisy dev errors)
-  const coords = getLatLng(venue);
-  const canStaticMap = import.meta.env.PROD && hasValidCoords(coords);
+  // a) API coords?
+  let coords = getLatLng(venue);
+
+  // b) or cached geocode coords (read-only)
+  if (!coords) {
+    const cached = getCachedForLocation(venue?.location as VenueLocation | undefined);
+    if (cached) coords = { lat: cached.lat, lng: cached.lng };
+  }
+
+  const force = import.meta.env.VITE_FORCE_STATIC_MAPS === 'true';
+  const canStaticMap = (import.meta.env.PROD || force) && hasValidCoords(coords);
 
   if (canStaticMap && coords) {
     const w = opts?.width ?? 400;
     const h = opts?.height ?? 240;
-    const zoom = opts?.zoom ?? 13;
-    const src = staticMapUrlOSM(coords.lat, coords.lng, w, h, zoom);
+    const z = opts?.zoom ?? 13;
+    const src = buildStaticMapUrl(coords.lat, coords.lng, w, h, z);
     return { src, alt: `Map of ${venue?.name ?? 'venue'}` };
   }
 
-  // 3) Final fallback
+  // if we got here, we're falling back to the SVG
+  // Toggle logging in prod via ?debugthumbs (set in main.tsx)
+  const debugThumbs =
+    typeof window !== 'undefined' &&
+    (window as Window & { __debugThumbs?: boolean }).__debugThumbs === true;
+
+  const shouldLog = import.meta.env.DEV || (import.meta.env.PROD && debugThumbs);
+
+  if (shouldLog) {
+    const w = opts?.width ?? 400;
+    const h = opts?.height ?? 240;
+    const z = opts?.zoom ?? 13;
+    const previewUrl = coords ? buildStaticMapUrl(coords.lat, coords.lng, w, h, z) : null;
+
+    console.log('[thumb fallback]', {
+      venue: venue?.name ?? '(unknown)',
+      coords, // from API or cache (null if none)
+      hasKey: Boolean(import.meta.env.VITE_GEOAPIFY_KEY),
+      force: import.meta.env.VITE_FORCE_STATIC_MAPS === 'true',
+      canStaticMap:
+        (import.meta.env.PROD || import.meta.env.VITE_FORCE_STATIC_MAPS === 'true') &&
+        hasValidCoords(coords),
+      previewUrl, // paste into address bar to verify
+    });
+  }
+
   return { src: PLACEHOLDER_IMG, alt };
 }
 
 export function handleImgErrorToPlaceholder(e: SyntheticEvent<HTMLImageElement, Event>) {
-  const img = e.currentTarget;
-  if (img.src !== PLACEHOLDER_IMG) img.src = PLACEHOLDER_IMG;
+  if (e.currentTarget.src !== PLACEHOLDER_IMG) e.currentTarget.src = PLACEHOLDER_IMG;
 }

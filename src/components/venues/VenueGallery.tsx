@@ -1,19 +1,31 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
+import { useGeocodedStaticMap } from '@/hooks/useGeocodedStaticMap';
 import type { Venue } from '@/lib/api/venues';
-import { getVenueImage, handleImgErrorToPlaceholder } from '@/utils/venueImage';
+import { handleImgErrorToPlaceholder } from '@/utils/venueImage';
 
-type Props = { venue: Pick<Venue, 'name' | 'media' | 'location'> };
+type Props = { venue: Pick<Venue, 'id' | 'name' | 'media' | 'location'> };
 
 export default function VenueGallery({ venue }: Props) {
-  const normalized = (venue.media ?? [])
-    .filter((m) => m?.url && m.url.trim())
-    .map((m) => ({ url: m!.url!.trim(), alt: m?.alt || venue.name }));
+  // Geocoded static map (prod only). If geocode fails, this will be your SVG placeholder.
+  const { src: geoSrc, alt: geoAlt } = useGeocodedStaticMap(venue, 0, {
+    width: 1200,
+    height: 675,
+    zoom: 13,
+  });
 
-  if (normalized.length === 0) {
-    const { src, alt } = getVenueImage(venue, 0, { width: 1200, height: 675, zoom: 13 });
-    normalized.push({ url: src, alt });
-  }
+  // Normalize media; if none, fall back to the geocoded static map (or SVG if geocode fails)
+  const normalized = useMemo(() => {
+    const items =
+      (venue.media ?? [])
+        .filter((m) => m?.url && m.url.trim())
+        .map((m) => ({ url: m!.url!.trim(), alt: m?.alt || venue.name })) ?? [];
+
+    if (items.length === 0) {
+      items.push({ url: geoSrc, alt: geoAlt });
+    }
+    return items;
+  }, [venue.media, venue.name, geoSrc, geoAlt]);
 
   const [active, setActive] = useState(0);
   const current = normalized[Math.min(active, normalized.length - 1)];

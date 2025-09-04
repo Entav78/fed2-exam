@@ -51,6 +51,11 @@ const router = createBrowserRouter([
   },
 ]);
 
+// enable thumbnail debug when ?debugthumbs is in the URL
+if (new URLSearchParams(window.location.search).has('debugthumbs')) {
+  (window as Window & { __debugThumbs?: boolean }).__debugThumbs = true;
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <RouterProvider router={router} />

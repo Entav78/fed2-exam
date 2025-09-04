@@ -14,23 +14,21 @@ type Props = {
 
 const nok = new Intl.NumberFormat('no-NO', { style: 'currency', currency: 'NOK' });
 
-export default function VenueCard({
-  venue,
-  layout = 'grid',
-  showManage = false,
-  manageHref,
-  className = '',
-}: Props) {
+export default function VenueCard(props: Props) {
+  const { venue, showManage = false, manageHref, className = '' } = props;
+
+  const layout = props.layout ?? 'grid';
+  const isRow = layout === 'row';
+
   const city = venue.location?.city;
 
-  const imgOpts =
-    layout === 'row'
-      ? { width: 128, height: 128, zoom: 14 }
-      : { width: 800, height: 320, zoom: 13 };
+  const imgOpts = isRow
+    ? { width: 128, height: 128, zoom: 14 }
+    : { width: 800, height: 320, zoom: 13 };
 
   const { src, alt } = useGeocodedStaticMap(venue, 0, imgOpts);
 
-  if (layout === 'row') {
+  if (isRow) {
     return (
       <div className={`card min-h-[112px] flex items-center gap-4 ${className ?? ''}`}>
         <img
