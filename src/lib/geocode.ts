@@ -1,9 +1,8 @@
 // src/lib/geocode.ts
 import type { VenueLocation } from '@/types/common';
-import { isLikelyValidCoords } from '@/utils/geo';
 
-// src/lib/geocode.ts
-const GEO_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+// --- cache (7 days) ----------------------------------------------------------
+const GEO_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 function readCache(key: string) {
   const raw = localStorage.getItem(key);
@@ -16,7 +15,6 @@ function readCache(key: string) {
     return null;
   }
 }
-
 function writeCache(key: string, v: { lat: number; lng: number }) {
   localStorage.setItem(key, JSON.stringify({ v, t: Date.now() }));
 }
@@ -24,33 +22,44 @@ function keyFor(q: string) {
   return `geocode:${q.toLowerCase().replace(/\s+/g, ' ').trim()}`;
 }
 
-// 1) Short-circuit junky queries and wrap fetch in try/catch
-export async function geocodeAddress(q: string) {
-  const normalized = q.trim();
-  if (normalized.length < 3) return null; // avoid single letters etc.
+// --- helpers -----------------------------------------------------------------
+function finite(n: unknown): n is number {
+  return typeof n === 'number' && Number.isFinite(n);
+}
+function normalizeQuery(q: string) {
+  return q.trim().replace(/\s+/g, ' ');
+}
 
-  const key = keyFor(normalized);
-  const cached = readCache(key);
+// --- PUBLIC: Geoapify-backed geocode ----------------------------------------
+export async function geocodeAddress(q: string) {
+  const API_KEY = import.meta.env.VITE_GEOAPIFY_KEY as string | undefined;
+  const normalized = normalizeQuery(q);
+  if (!API_KEY || normalized.length < 3) return null; // no key or junk queries
+
+  const cacheKey = keyFor(normalized);
+  const cached = readCache(cacheKey);
   if (cached) return cached;
 
   const url =
-    `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=` +
-    encodeURIComponent(normalized);
+    `https://api.geoapify.com/v1/geocode/search` +
+    `?text=${encodeURIComponent(normalized)}&limit=1&apiKey=${API_KEY}`;
 
   try {
-    const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    const res = await fetch(url);
     if (!res.ok) return null;
 
-    const data = (await res.json()) as Array<{ lat: string; lon: string }>;
-    if (!Array.isArray(data) || data.length === 0) return null;
+    const json = await res.json();
+    const p = json?.features?.[0]?.properties;
+    const lat = Number(p?.lat);
+    const lng = Number(p?.lon);
 
-    const coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-    if (!isFinite(coords.lat) || !isFinite(coords.lng)) return null;
+    if (!finite(lat) || !finite(lng) || (lat === 0 && lng === 0)) return null;
 
-    writeCache(key, coords);
+    const coords = { lat, lng };
+    writeCache(cacheKey, coords);
     return coords;
   } catch {
-    return null; // network errors etc.
+    return null;
   }
 }
 
@@ -63,15 +72,13 @@ export async function geocodeFromLocation(loc?: VenueLocation) {
     [loc.city, loc.country].filter(Boolean).join(', '),
     loc.country ?? '',
   ]
-    .map((s) => s.trim())
+    .map(normalizeQuery)
     .filter(Boolean);
 
-  // de-dupe
   const unique = [...new Set(candidates)];
-
   for (const q of unique) {
     const hit = await geocodeAddress(q);
-    if (hit && isLikelyValidCoords(hit.lat, hit.lng)) return hit;
+    if (hit) return hit;
   }
   return null;
 }
