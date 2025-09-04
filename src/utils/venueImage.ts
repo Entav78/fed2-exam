@@ -71,6 +71,17 @@ function getLatLng(venue: WithMedia) {
   return lat !== undefined && lng !== undefined ? { lat, lng } : null;
 }
 
+function hasValidCoords(coords: { lat: number; lng: number } | null) {
+  if (!coords) return false;
+  const { lat, lng } = coords;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  // avoid ocean thumbnails / bad data
+  if (lat === 0 && lng === 0) return false;
+  // optional sanity bounds
+  if (lat < -85 || lat > 85 || lng < -180 || lng > 180) return false;
+  return true;
+}
+
 function staticMapUrlOSM(lat: number, lng: number, w = 400, h = 240, zoom = 13) {
   // Public demo service; fine for light usage. Keep OSM attribution on your page.
   return `https://staticmap.openstreetmap.de/staticmap.php?center=${lat},${lng}&zoom=${zoom}&size=${w}x${h}&markers=${lat},${lng},lightblue1`;
@@ -91,9 +102,11 @@ export function getVenueImage(venue: WithMedia, index = 0, opts?: GetVenueImageO
   // Real photo available
   if (url) return { src: url, alt };
 
-  // Fallback: static map if we have coordinates
+  // 2) Static map ONLY in production (avoids noisy dev errors)
   const coords = getLatLng(venue);
-  if (coords) {
+  const canStaticMap = import.meta.env.PROD && hasValidCoords(coords);
+
+  if (canStaticMap && coords) {
     const w = opts?.width ?? 400;
     const h = opts?.height ?? 240;
     const zoom = opts?.zoom ?? 13;
@@ -101,11 +114,10 @@ export function getVenueImage(venue: WithMedia, index = 0, opts?: GetVenueImageO
     return { src, alt: `Map of ${venue?.name ?? 'venue'}` };
   }
 
-  // Final fallback: inline SVG placeholder
+  // 3) Final fallback
   return { src: PLACEHOLDER_IMG, alt };
 }
 
-/** Swap broken images to the placeholder (prevents error loops). */
 export function handleImgErrorToPlaceholder(e: SyntheticEvent<HTMLImageElement, Event>) {
   const img = e.currentTarget;
   if (img.src !== PLACEHOLDER_IMG) img.src = PLACEHOLDER_IMG;
