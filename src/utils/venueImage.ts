@@ -90,16 +90,25 @@ function hasValidCoords(coords: { lat: number; lng: number } | null) {
 // good: no manual encode, decimals with '.'
 
 // src/utils/venueImage.ts (or wherever you keep it)
-export function buildStaticMapUrl(lat: number, lng: number, w = 400, h = 240, z = 13) {
+export function buildStaticMapUrl(lat: number, lng: number, w = 400, h = 240, z = 13): string {
   const key = import.meta.env.VITE_GEOAPIFY_KEY;
   if (!key) return PLACEHOLDER_IMG;
-  const lon = Number(lng).toFixed(6);
-  const la = Number(lat).toFixed(6);
-  const color = '%2353423C'; // #53423C encoded
+
+  // force ASCII dot-decimals and correct order lon,lat
+  const lon = Number(lng);
+  const la = Number(lat);
+  const lonStr = Number.isFinite(lon) ? lon.toFixed(6) : '0.000000';
+  const latStr = Number.isFinite(la) ? la.toFixed(6) : '0.000000';
+
+  // IMPORTANT: build strings manually so ":" and "," are not URL-encoded
+  const center = `lonlat:${lonStr},${latStr}`;
+  const marker = `lonlat:${lonStr},${latStr}`; // no styling — keep it simple
+
   return (
-    `https://maps.geoapify.com/v1/staticmap?style=osm-carto&width=${w}&height=${h}` +
-    `&center=lonlat:${lon},${la}&zoom=${z}` +
-    `&marker=lonlat:${lon},${la};size:48;color:${color}` +
+    `https://maps.geoapify.com/v1/staticmap?style=osm-carto` +
+    `&width=${w}&height=${h}` +
+    `&center=${center}&zoom=${z}` +
+    `&marker=${marker}` +
     `&apiKey=${key}`
   );
 }
