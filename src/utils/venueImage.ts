@@ -85,15 +85,42 @@ function hasValidCoords(coords: { lat: number; lng: number } | null) {
 }
 
 // Geoapify static map URL (uses your VITE_GEOAPIFY_KEY)
-export function buildStaticMapUrl(lat: number, lng: number, w = 400, h = 240, z = 13): string {
-  const key = import.meta.env.VITE_GEOAPIFY_KEY;
-  if (key) {
-    const center = `lonlat:${lng},${lat}`;
-    const marker = `lonlat:${lng},${lat};type:material;color:%2353423C;size:medium`;
-    return `https://maps.geoapify.com/v1/staticmap?style=osm-carto&width=${w}&height=${h}&center=${center}&zoom=${z}&marker=${marker}&apiKey=${key}`;
-  }
-  return PLACEHOLDER_IMG;
+// src/utils/venueImage.ts
+// Static map URL (uses "awesome" marker = no icon needed)
+// good: no manual encode, decimals with '.'
+
+// src/utils/venueImage.ts (or wherever you keep it)
+export function buildStaticMapUrl(lat: number, lng: number, w = 800, h = 320, z = 13): string {
+  const key = (import.meta.env.VITE_GEOAPIFY_KEY || '').trim();
+  if (!key) return PLACEHOLDER_IMG;
+
+  const lon = Number(lng).toFixed(6); // NOTE: Geoapify wants lon,lat order
+  const la = Number(lat).toFixed(6);
+
+  const url = new URL('https://maps.geoapify.com/v1/staticmap');
+  url.searchParams.set('style', 'osm-carto');
+  url.searchParams.set('width', String(Math.round(w)));
+  url.searchParams.set('height', String(Math.round(h)));
+  url.searchParams.set('center', `lonlat:${lon},${la}`);
+  url.searchParams.set('zoom', String(Math.round(z)));
+
+  // Valid marker format. Order here is important for their validator.
+  url.searchParams.set('marker', `lonlat:${lon},${la};size:48;color:#53423C`);
+
+  url.searchParams.set('apiKey', key);
+  return url.toString();
 }
+
+// Option B: URLSearchParams (also safe; it won't encode the ':')
+// const url = new URL('https://maps.geoapify.com/v1/staticmap');
+// url.searchParams.set('style', 'osm-carto');
+// url.searchParams.set('width', String(w));
+// url.searchParams.set('height', String(h));
+// url.searchParams.set('center', center);
+// url.searchParams.set('zoom', String(z));
+// url.searchParams.set('marker', marker); // '#…' will become %23 automatically — that's OK
+// url.searchParams.set('apiKey', key);
+// return url.toString();
 
 // ---------- Public API ----------
 /**
