@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 
+import { useGeocodedStaticMap } from '@/hooks/useGeocodedStaticMap';
 import type { Venue } from '@/lib/api/venues';
-import { getVenueImage, handleImgErrorToPlaceholder } from '@/utils/venueImage';
+import { handleImgErrorToPlaceholder } from '@/utils/venueImage';
 
 type Props = {
   venue: Venue;
@@ -22,13 +23,12 @@ export default function VenueCard({
 }: Props) {
   const city = venue.location?.city;
 
-  // Size hints only affect static map/placeholder; real photos are unaffected.
   const imgOpts =
     layout === 'row'
       ? { width: 128, height: 128, zoom: 14 }
       : { width: 800, height: 320, zoom: 13 };
 
-  const { src, alt } = getVenueImage(venue, 0, imgOpts);
+  const { src, alt } = useGeocodedStaticMap(venue, 0, imgOpts);
 
   if (layout === 'row') {
     return (
@@ -36,7 +36,7 @@ export default function VenueCard({
         <img
           src={src}
           alt={alt}
-          className="thumb" // h-16 w-16 rounded object-cover
+          className="thumb"
           loading="lazy"
           decoding="async"
           onError={handleImgErrorToPlaceholder}
