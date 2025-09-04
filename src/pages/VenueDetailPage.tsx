@@ -20,6 +20,15 @@ import { formatLocation } from '@/utils/location';
 const nok = new Intl.NumberFormat('no-NO', { style: 'currency', currency: 'NOK' });
 
 export default function VenueDetailPage() {
+  if (import.meta.env.PROD) {
+    console.log(
+      '[env] mode:',
+      import.meta.env.MODE,
+      'hasGeoKey:',
+      !!import.meta.env.VITE_GEOAPIFY_KEY,
+    );
+  }
+
   const { id } = useParams<{ id: string }>();
 
   // ✅ All hooks live above any early returns
