@@ -11,7 +11,7 @@ import VenueMap from '@/components/venues/VenueMap';
 import { createBooking } from '@/lib/api/bookings';
 import type { BookingLite } from '@/lib/api/venues';
 import { getVenueById, type Venue } from '@/lib/api/venues';
-import { geocodeFromLocation } from '@/lib/geocode';
+import { geocodeAddress, type GeocodeHit } from '@/lib/geocode';
 import { useAuthStore } from '@/store/authStore';
 import { dateOnly } from '@/utils/date';
 import { isLikelyValidCoords } from '@/utils/geo';
@@ -20,22 +20,13 @@ import { formatLocation } from '@/utils/location';
 const nok = new Intl.NumberFormat('no-NO', { style: 'currency', currency: 'NOK' });
 
 export default function VenueDetailPage() {
-  if (import.meta.env.PROD) {
-    console.log(
-      '[env] mode:',
-      import.meta.env.MODE,
-      'hasGeoKey:',
-      !!import.meta.env.VITE_GEOAPIFY_KEY,
-    );
-  }
-
   const { id } = useParams<{ id: string }>();
 
   // ✅ All hooks live above any early returns
   const [venue, setVenue] = useState<Venue | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [fallbackCoords, setFallbackCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [fallbackCoords, setFallbackCoords] = useState<GeocodeHit | null>(null);
   const [range, setRange] = useState<DateRange | undefined>();
   const loggedIn = useAuthStore((s) => s.isLoggedIn());
   const currentUser = useAuthStore((s) => s.user);
@@ -64,20 +55,54 @@ export default function VenueDetailPage() {
     return Math.max(0, Math.round((+range.to - +range.from) / 86400000));
   }, [range]);
 
-  // geocode fallback: runs when venue changes; bails if coords are valid
+  const venueId = venue?.id ?? '';
+  const venueName = venue?.name ?? '';
+  const addr = venue?.location?.address ?? '';
+  const city = venue?.location?.city ?? '';
+  const country = venue?.location?.country ?? '';
+  const latVal = venue?.location?.lat;
+  const lngVal = venue?.location?.lng;
+  const hasStoredCoords = isLikelyValidCoords(latVal, lngVal);
+
   useEffect(() => {
-    if (!venue) return;
-    const lat = venue.location?.lat;
-    const lng = venue.location?.lng;
-    if (isLikelyValidCoords(lat, lng)) {
+    if (!venueId) return;
+
+    if (hasStoredCoords) {
       setFallbackCoords(null);
       return;
     }
+
+    let active = true;
     (async () => {
-      const gc = await geocodeFromLocation(venue.location);
-      if (gc) setFallbackCoords(gc);
+      const tries: string[] = [];
+
+      const structured = [addr, city, country].filter(Boolean).join(', ');
+      if (structured) tries.push(structured);
+
+      const formatted = [city, country].filter(Boolean).join(', ');
+      if (formatted && formatted !== structured) tries.push(formatted);
+
+      if (venueName) {
+        tries.push(formatted ? `${venueName}, ${formatted}` : venueName);
+      }
+
+      for (const q of [...new Set(tries)]) {
+        const hit = await geocodeAddress(q);
+        if (!active) return;
+        if (hit) {
+          setFallbackCoords(hit);
+          return;
+        }
+      }
+
+      if (active) setFallbackCoords(null);
     })();
-  }, [venue]);
+
+    return () => {
+      active = false;
+    };
+  }, [venueId, venueName, addr, city, country, hasStoredCoords]);
+
   // re-run per venue
 
   // ✅ Now it's safe to early-return — no hooks below this line
@@ -88,10 +113,14 @@ export default function VenueDetailPage() {
   const lat = venue.location?.lat;
   const lng = venue.location?.lng;
   const hasCoords = isLikelyValidCoords(lat, lng);
-  const locationText = formatLocation(venue.location, 'Location not specified');
 
-  const mapsHref = hasCoords
-    ? `https://www.google.com/maps?q=${lat},${lng}`
+  // prefer real coords; otherwise use the geocoded fallback (with label)
+  const coords = hasCoords ? { lat: Number(lat), lng: Number(lng) } : fallbackCoords;
+
+  const locationText = coords?.label ?? formatLocation(venue.location, 'Location not specified');
+
+  const mapsHref = coords
+    ? `https://www.google.com/maps?q=${coords.lat},${coords.lng}`
     : locationText
       ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationText)}`
       : undefined;
@@ -218,15 +247,8 @@ export default function VenueDetailPage() {
         <h2 className="text-lg font-semibold mb-2">Location</h2>
         <p className="text-muted mb-3">{locationText}</p>
 
-        {hasCoords ? (
-          <VenueMap lat={lat!} lng={lng!} name={venue.name} height={320} />
-        ) : fallbackCoords ? (
-          <VenueMap
-            lat={fallbackCoords.lat}
-            lng={fallbackCoords.lng}
-            name={venue.name}
-            height={320}
-          />
+        {coords ? (
+          <VenueMap lat={coords.lat} lng={coords.lng} name={venue.name} height={320} />
         ) : (
           <p className="text-sm text-muted">No valid map location for this venue.</p>
         )}
