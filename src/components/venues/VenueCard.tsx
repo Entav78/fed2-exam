@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 import { useGeocodedStaticMap } from '@/hooks/useGeocodedStaticMap';
 import type { Venue } from '@/lib/api/venues';
-import { handleImgErrorToPlaceholder } from '@/utils/venueImage';
+import { handleImgErrorToMapThenPlaceholder } from '@/utils/venueImage';
 
 type Props = {
   venue: Venue;
@@ -14,12 +14,14 @@ type Props = {
 
 const nok = new Intl.NumberFormat('no-NO', { style: 'currency', currency: 'NOK' });
 
-export default function VenueCard(props: Props) {
-  const { venue, showManage = false, manageHref, className = '' } = props;
-
-  const layout = props.layout ?? 'grid';
+export default function VenueCard({
+  venue,
+  layout = 'grid',
+  showManage = false,
+  manageHref,
+  className = '',
+}: Props) {
   const isRow = layout === 'row';
-
   const city = venue.location?.city;
 
   const imgOpts = isRow
@@ -37,7 +39,8 @@ export default function VenueCard(props: Props) {
           className="thumb"
           loading="lazy"
           decoding="async"
-          onError={handleImgErrorToPlaceholder}
+          referrerPolicy="no-referrer"
+          onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
         />
 
         <div className="min-w-0 flex-1">
@@ -85,7 +88,8 @@ export default function VenueCard(props: Props) {
         className="h-40 w-full object-cover"
         loading="lazy"
         decoding="async"
-        onError={handleImgErrorToPlaceholder}
+        referrerPolicy="no-referrer"
+        onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
       />
 
       <div className="p-4">

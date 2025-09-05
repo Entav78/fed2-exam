@@ -1,32 +1,19 @@
-/**
- * Holidaze API constants & URL builders
- * Works with Noroff v2 API and Vite env vars.
- */
+import { API_BASE, NOROFF_API_KEY } from '@/lib/config';
 
-export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'https://v2.api.noroff.dev';
-console.log('API_BASE =', import.meta.env.VITE_API_BASE_URL);
+export { API_BASE }; // re-export if you like
 
-// Roots
 export const API_AUTH = `${API_BASE}/auth`;
 export const API_HOLIDAZE = `${API_BASE}/holidaze`;
-
-// Collections
 export const API_VENUES = `${API_HOLIDAZE}/venues`;
 export const API_BOOKINGS = `${API_HOLIDAZE}/bookings`;
 export const API_PROFILES = `${API_HOLIDAZE}/profiles`;
 
-// Optional API key (only required for some endpoints)
-export const NOROFF_API_KEY = import.meta.env.VITE_API_KEY ?? '';
-
 export function buildHeaders(method: string = 'GET') {
   const headers: Record<string, string> = {};
-
   if (['POST', 'PUT', 'PATCH'].includes(method.toUpperCase())) {
     headers['Content-Type'] = 'application/json';
   }
-
-  const apiKey = import.meta.env.VITE_API_KEY;
-  if (apiKey) headers['X-Noroff-API-Key'] = apiKey;
+  if (NOROFF_API_KEY) headers['X-Noroff-API-Key'] = NOROFF_API_KEY;
 
   const token = localStorage.getItem('token') ?? localStorage.getItem('accessToken') ?? undefined;
   if (token) headers['Authorization'] = `Bearer ${token}`;
