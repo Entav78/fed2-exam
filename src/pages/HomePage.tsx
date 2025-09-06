@@ -7,6 +7,7 @@ import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { fetchVenues, isVenueAvailable, type Venue } from '@/lib/api/venues';
 import { normalizeCity } from '@/lib/cities';
 import { normalizeCountry } from '@/lib/countries';
+import { isImagelessVenue } from '@/utils/venueImage';
 
 // Build only the fields the API cares about for the list call
 function toVenueListParams(p: {
@@ -38,7 +39,7 @@ function toISODate(d: Date) {
 }
 
 export default function HomePage() {
-  const API_LIMIT = 50;
+  const API_LIMIT = 24;
 
   // default: tomorrow → 2 nights
   const [dateFrom, setDateFrom] = useState(toISODate(addDays(new Date(), 1)));
@@ -47,6 +48,7 @@ export default function HomePage() {
 
   const todayISO = useMemo(() => toISODate(new Date()), []);
   const minTo = useMemo(() => toISODate(addDays(new Date(dateFrom), 1)), [dateFrom]);
+  const [includeNoImage, setIncludeNoImage] = useState(false);
 
   const [filters, setFilters] = useState<VenueFiltersState>({
     q: '',
@@ -56,6 +58,7 @@ export default function HomePage() {
   const debouncedQ = useDebouncedValue(filters.q, 300);
 
   const [allFetched, setAllFetched] = useState<Venue[]>([]);
+
   const [fetchPage, setFetchPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -109,6 +112,7 @@ export default function HomePage() {
     setOrDelete(next, 'pets', filters.pets ? 1 : undefined);
     setOrDelete(next, 'country', filters.country || undefined);
     setOrDelete(next, 'city', filters.city || undefined);
+    setOrDelete(next, 'noimg', includeNoImage ? 1 : undefined);
 
     // Availability controls
     setOrDelete(next, 'from', dateFrom);
@@ -133,6 +137,7 @@ export default function HomePage() {
     dateFrom,
     dateTo,
     guests,
+    includeNoImage,
     setSearchParams,
   ]);
 
@@ -162,6 +167,9 @@ export default function HomePage() {
     if (from) setDateFrom(from);
     if (to) setDateTo(to);
     if (g && !Number.isNaN(+g)) setGuests(Math.max(1, +g));
+
+    // ✅ include-no-image toggle (own state)
+    setIncludeNoImage(searchParams.get('noimg') === '1' || searchParams.get('noimg') === 'true');
 
     // run once
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -289,7 +297,7 @@ export default function HomePage() {
     return allFetched.filter((v) => isVenueAvailable(v, dateFrom, dateTo, guests));
   }, [allFetched, dateFrom, dateTo, guests]);
 
-  const visibleVenues = useMemo(() => {
+  const filteredVenues = useMemo(() => {
     const q = debouncedQ.trim().toLowerCase();
 
     const hay = (v: Venue) =>
@@ -310,7 +318,7 @@ export default function HomePage() {
 
     let list = available;
 
-    // country/city first (canonical country names)
+    // country/city first (canonical names)
     if (filters.country) {
       list = list.filter((v) => normalizeCountry(v.location?.country ?? null) === filters.country);
     }
@@ -330,7 +338,7 @@ export default function HomePage() {
     if (filters.breakfast) list = list.filter((v) => !!v.meta?.breakfast);
     if (filters.pets) list = list.filter((v) => !!v.meta?.pets);
 
-    // sort (clone before sorting to avoid mutating `available`)
+    // sort (clone before sorting)
     const dir = filters.order === 'asc' ? 1 : -1;
     if (filters.sort === 'price') return [...list].sort((a, b) => (a.price - b.price) * dir);
     if (filters.sort === 'rating')
@@ -340,6 +348,16 @@ export default function HomePage() {
     return list;
   }, [available, debouncedQ, filters]);
 
+  const hiddenCount = useMemo(
+    () => filteredVenues.filter(isImagelessVenue).length,
+    [filteredVenues],
+  );
+
+  const visibleVenues = useMemo(
+    () => (includeNoImage ? filteredVenues : filteredVenues.filter((v) => !isImagelessVenue(v))),
+    [filteredVenues, includeNoImage],
+  );
+
   return (
     <div className="p-4 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Find available venues</h1>
@@ -347,7 +365,10 @@ export default function HomePage() {
       <VenueFilters
         value={filters}
         onChange={(next) => setFilters(next)}
-        onClear={() => setFilters({ q: '', sort: 'created', order: 'desc' })}
+        onClear={() => {
+          setFilters({ q: '', sort: 'created', order: 'desc' });
+          setIncludeNoImage(false); // optional
+        }}
         countries={countries}
         cities={cities}
       />
@@ -398,6 +419,20 @@ export default function HomePage() {
             className="w-full rounded-md border border-border-light px-3 py-2"
           />
         </label>
+        <div className="mb-3 flex items-center gap-2">
+          <input
+            id="include-no-image"
+            type="checkbox"
+            checked={includeNoImage}
+            onChange={(e) => setIncludeNoImage(e.target.checked)}
+          />
+          <label htmlFor="include-no-image" className="text-sm">
+            Include venues without photo/map
+          </label>
+          {!includeNoImage && hiddenCount > 0 && (
+            <span className="text-xs text-muted">({hiddenCount} hidden)</span>
+          )}
+        </div>
       </form>
 
       {loading && <p>Loading…</p>}

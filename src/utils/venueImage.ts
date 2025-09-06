@@ -109,18 +109,17 @@ function hasValidCoords(coords: { lat: number; lng: number } | null) {
 export function buildStaticMapUrl(lat: number, lng: number, w = 400, h = 240, z = 13): string {
   if (!GEOAPIFY_KEY) return PLACEHOLDER_IMG;
 
-  // Force dot-decimals and correct lon,lat order
   const lonStr = Number(lng).toFixed(6);
   const latStr = Number(lat).toFixed(6);
-
   const center = `lonlat:${lonStr},${latStr}`;
-  const marker = `lonlat:${lonStr},${latStr}`; // simple default marker
+  const marker = `lonlat:${lonStr},${latStr}`;
 
   return (
     `https://maps.geoapify.com/v1/staticmap?style=osm-carto` +
     `&width=${w}&height=${h}` +
     `&center=${center}&zoom=${z}` +
     `&marker=${marker}` +
+    `&scaleFactor=2&format=jpeg` + // <- optional but nice
     `&apiKey=${GEOAPIFY_KEY}`
   );
 }
@@ -203,6 +202,54 @@ export function handleImgErrorToMapThenPlaceholder(
     if (img.src !== PLACEHOLDER_IMG) img.src = PLACEHOLDER_IMG;
     img.dataset.fallbackTried = 'placeholder';
   };
+}
+/** Is the given URL very likely a direct image (not an HTML page)? */
+export function hasUsablePhotoUrl(url?: string | null): boolean {
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    const p = u.pathname.toLowerCase();
+    // common image extensions
+    const okExt = /\.(avif|webp|jpe?g|png|gif)$/i.test(p);
+    if (!okExt) return false;
+
+    // soft block a few page-like hosts (direct images usually come from their CDNs)
+    const badHosts = new Set(['unsplash.com', 'istockphoto.com']);
+    if (badHosts.has(u.hostname)) return false;
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Do we have enough info to create a static map for this venue (API coords or cached geocode)? */
+// Do we have enough info to create a static map for this venue?
+export function canMakeStaticMap(
+  venue: { location?: Partial<VenueLocation> | null } | null | undefined,
+): boolean {
+  if (!GEOAPIFY_KEY) return false; // can't build maps without a key
+
+  const loc = venue?.location as ExtendedLoc | undefined;
+
+  // 1) direct coords from API (supports lat/lng/lon/long/latitude/longitude)
+  const direct = coordsFromLocation(loc);
+  if (direct && hasValidCoords(direct)) return true;
+
+  // 2) or cached geocode for the venue's address/city/country
+  const cached = getCachedForLocation(loc);
+  return !!cached;
+}
+
+/** True when a venue has neither a good photo nor a possible static-map. */
+export function isImagelessVenue(venue: {
+  media?: Array<{ url?: string | null }> | null;
+  location?: Partial<VenueLocation> | null;
+}): boolean {
+  const url = venue?.media?.[0]?.url?.trim();
+  const hasPhoto = hasUsablePhotoUrl(url);
+  const canMap = canMakeStaticMap(venue);
+  return !hasPhoto && !canMap;
 }
 
 /** Simple onError fallback straight to placeholder (kept for convenience) */
