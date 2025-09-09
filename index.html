@@ -1,10 +1,24 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="brown">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <link rel="preconnect" href="https://maps.geoapify.com" crossorigin />
     <link rel="dns-prefetch" href="https://maps.geoapify.com" />
+    <script>
+      (function () {
+        var allowed = ['brown', 'dark', 'neon', 'green', 'green-dark', 'blue', 'blue-dark'];
+        var saved = localStorage.getItem('theme');
+        var theme =
+          allowed.indexOf(saved) !== -1
+            ? saved
+            : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'brown';
+
+        document.documentElement.setAttribute('data-theme', theme);
+      })();
+    </script>
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Holidayz</title>

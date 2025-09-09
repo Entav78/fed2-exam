@@ -12,7 +12,12 @@ type Props = {
   className?: string;
 };
 
-const nok = new Intl.NumberFormat('no-NO', { style: 'currency', currency: 'NOK' });
+const nok = new Intl.NumberFormat('no-NO', {
+  style: 'currency',
+  currency: 'NOK',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
 
 export default function VenueCard({
   venue,

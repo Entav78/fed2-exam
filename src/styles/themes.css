@@ -1,0 +1,213 @@
+/* Default – light/brown */
+:root,
+:root[data-theme='brown'] {
+  /* base */
+  --bg: 232 224 220; /* #E8E0DC */
+  --fg: 26 26 26; /* #1A1A1A */
+  --muted: 107 77 67; /* #6B4D43 */
+
+  /* surfaces */
+  --card: 255 255 255; /* #FFFFFF */
+  --card-fg: 26 26 26; /* #1A1A1A */
+
+  /* controls */
+  --border: 214 199 191; /* #D6C7BF */
+  --input: 255 255 255; /* #FFFFFF */
+
+  /* brand / accent */
+  --brand: 83 66 60; /* #53423C */
+  --on-brand: 255 255 255;
+  --accent: 166 139 124; /* #A68B7C */
+  --on-accent: 26 26 26;
+
+  /* status */
+  --success: 6 95 70; /* #065F46 */
+  --warning: 146 64 14; /* #92400E */
+  --danger: 185 28 28; /* #B91C1C */
+
+  /* header */
+  --header-bg: 83 66 60; /* #53423C */
+  --header-fg: 255 255 255; /* text on header */
+  --header-hover: 108 86 79; /* #6C564F */
+  --header: var(--header-bg);
+
+  color-scheme: light;
+}
+
+/* Dark */
+:root[data-theme='dark'] {
+  --bg: 20 20 20; /* #141414 */
+  --fg: 245 245 245; /* #F5F5F5 */
+  --muted: 160 160 160;
+
+  --header-bg: 38 38 38; /* #262626 */
+  --header-fg: 245 245 245;
+  --header-hover: 48 48 48; /* slightly lighter/darker */
+  --header: var(--header-bg);
+
+  --card: 45 45 45; /* #2D2D2D */
+  --card-fg: 245 245 245;
+
+  --border: 102 102 102; /* #666 */
+  --input: 59 59 59; /* #3B3B3B */
+
+  --brand: 180 160 150; /* litt lysere i dark */
+  --on-brand: 20 20 20;
+
+  --accent: 166 139 124;
+  --on-accent: 20 20 20;
+
+  --success: 34 211 146; /* #22D3EE-ish, kan justeres */
+  --warning: 250 204 21; /* #FACC15 */
+  --danger: 248 113 113; /* #F87171 */
+
+  color-scheme: dark;
+}
+
+/* Bonus: Neon (pink-ish) */
+:root[data-theme='neon'] {
+  --bg: 14 14 18;
+  --fg: 250 250 252;
+  --muted: 180 180 190;
+
+  --header-bg: 255 0 128; /* neon pink bar */
+  --header-fg: 0 0 0; /* black text reads well */
+  --header-hover: 230 0 115; /* hover tint */
+  --header: var(--header-bg);
+
+  --card: 22 22 28;
+  --card-fg: 245 245 248;
+
+  --border: 80 80 100;
+  --input: 30 30 40;
+
+  --brand: 255 0 128; /* neon pink */
+  --on-brand: 0 0 0;
+
+  --accent: 64 160 255; /* cyan/blue */
+  --on-accent: 0 0 0;
+
+  --success: 0 200 140;
+  --warning: 255 200 40;
+  --danger: 255 70 70;
+
+  color-scheme: dark;
+}
+
+/* ───────── Green (light) ───────── */
+:root[data-theme='green'] {
+  /* base */
+  --bg: 236 242 238; /* #ECF2EE */
+  --fg: 26 26 26; /* #1A1A1A */
+  --muted: 85 107 94; /* #556B5E */
+
+  /* surfaces */
+  --card: 255 255 255; /* #FFFFFF */
+  --card-fg: 26 26 26;
+
+  /* controls */
+  --border: 208 218 211; /* #D0DAD3 */
+  --input: 255 255 255;
+
+  /* brand / accent */
+  --brand: 18 92 72; /* #125C48 */
+  --on-brand: 255 255 255;
+  --accent: 109 172 129; /* #6DAC81 */
+  --on-accent: 20 20 20;
+
+  /* header */
+  --header-bg: 11 70 54; /* #0B4636 (a touch darker than brand) */
+  --header-fg: 255 255 255;
+  --header: var(--header-bg);
+
+  /* status (reuse your defaults) */
+  --success: 6 95 70;
+  --warning: 146 64 14;
+  --danger: 185 28 28;
+
+  color-scheme: light;
+}
+
+/* ───────── Green (dark) ───────── */
+:root[data-theme='green-dark'] {
+  --bg: 16 24 20; /* #101814 */
+  --fg: 230 241 235; /* #E6F1EB */
+  --muted: 150 165 158;
+
+  --card: 36 49 44; /* #24312C */
+  --card-fg: 230 241 235;
+
+  --border: 70 85 78; /* #46554E */
+  --input: 45 60 53; /* #2D3C35 */
+
+  --brand: 98 214 165; /* #62D6A5 (bright for dark bg) */
+  --on-brand: 10 20 16;
+  --accent: 120 200 160; /* #78C8A0 */
+  --on-accent: 10 20 16;
+
+  --header-bg: 12 40 31; /* #0C281F */
+  --header-fg: 235 245 240;
+  --header: var(--header-bg);
+
+  --success: 34 197 94; /* optional brighter status in dark */
+  --warning: 250 204 21;
+  --danger: 248 113 113;
+
+  color-scheme: dark;
+}
+
+/* ───────── Blue (light) ───────── */
+:root[data-theme='blue'] {
+  --bg: 232 238 246; /* #E8EEF6 */
+  --fg: 26 26 26;
+  --muted: 91 107 130; /* #5B6B82 */
+
+  --card: 255 255 255;
+  --card-fg: 26 26 26;
+
+  --border: 207 218 232; /* #CFDAE8 */
+  --input: 255 255 255;
+
+  --brand: 42 93 176; /* #2A5DB0 */
+  --on-brand: 255 255 255;
+  --accent: 108 179 255; /* #6CB3FF */
+  --on-accent: 20 20 20;
+
+  --header-bg: 37 79 153; /* #254F99 */
+  --header-fg: 255 255 255;
+  --header: var(--header-bg);
+
+  --success: 6 95 70;
+  --warning: 146 64 14;
+  --danger: 185 28 28;
+
+  color-scheme: light;
+}
+
+/* ───────── Blue (dark) ───────── */
+:root[data-theme='blue-dark'] {
+  --bg: 15 23 34; /* #0F1722 */
+  --fg: 232 237 247; /* #E8EDF7 */
+  --muted: 160 170 190;
+
+  --card: 27 37 51; /* #1B2533 */
+  --card-fg: 232 237 247;
+
+  --border: 62 74 93; /* #3E4A5D */
+  --input: 39 50 70; /* #273246 */
+
+  --brand: 122 168 255; /* #7AA8FF */
+  --on-brand: 12 20 30;
+  --accent: 92 225 230; /* #5CE1E6 (cyan pop) */
+  --on-accent: 12 20 30;
+
+  --header-bg: 21 32 56; /* #152038 */
+  --header-fg: 232 237 247;
+  --header: var(--header-bg);
+
+  --success: 34 197 94;
+  --warning: 250 204 21;
+  --danger: 248 113 113;
+
+  color-scheme: dark;
+}

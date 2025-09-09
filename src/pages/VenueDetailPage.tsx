@@ -17,7 +17,12 @@ import { dateOnly } from '@/utils/date';
 import { isLikelyValidCoords } from '@/utils/geo';
 import { formatLocation } from '@/utils/location';
 
-const nok = new Intl.NumberFormat('no-NO', { style: 'currency', currency: 'NOK' });
+const nok = new Intl.NumberFormat('no-NO', {
+  style: 'currency',
+  currency: 'NOK',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+});
 
 export default function VenueDetailPage() {
   const { id } = useParams<{ id: string }>();
