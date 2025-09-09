@@ -3,6 +3,24 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: [
+          'Nunito',
+          'system-ui',
+          '-apple-system',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'Arial',
+          'Noto Sans',
+          'Liberation Sans',
+          'Apple Color Emoji',
+          'Segoe UI Emoji',
+        ],
+        heading: ['Nunito', 'inherit'],
+      },
+    },
+    extend: {
       colors: {
         // New semantic names
         brand: '#53423C',
@@ -62,7 +80,7 @@ export default {
         lg: '2rem',
       },
       screens: {
-        '2xl': '72rem', // ≈ 1152px max content width (tweak as you like)
+        '2xl': '72rem', // ≈ 1152px max content width
       },
     },
   },
