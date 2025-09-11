@@ -226,7 +226,11 @@ export default function Header() {
             <li className="pt-2 text-[rgb(var(--header-fg))/0.7]">
               Logged in as <span className="font-semibold">{displayName}</span>
               <span className="opacity-70"> ({isManager ? 'Manager' : 'Customer'})</span>
-              <ThemeSwitcher />
+              <ThemeSwitcher
+                variant="header"
+                className="ml-2"
+                onChanged={() => setMenuOpen(false)}
+              />
             </li>
           )}
         </ul>

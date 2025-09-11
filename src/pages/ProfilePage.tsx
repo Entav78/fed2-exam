@@ -7,7 +7,6 @@ export default function ProfilePage() {
   const user = useAuthStore((s) => s.user);
   const isManager = useAuthStore((s) => s.isManager());
 
-  // Optional if route is protected by <RequireAuth />
   if (!user) return null;
 
   return (
@@ -15,9 +14,6 @@ export default function ProfilePage() {
       {/* header / user info */}
       <header>
         <h1 className="text-2xl font-bold">Your profile</h1>
-        <p className="text-sm text-muted">
-          {user.name} • {user.email} • {isManager ? 'manager' : 'customer'}
-        </p>
       </header>
 
       {/* profile header card */}

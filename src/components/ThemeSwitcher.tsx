@@ -6,6 +6,7 @@ type Props = {
   className?: string;
   variant?: 'default' | 'header';
   compact?: boolean;
+  onChanged?: (id: ThemeId) => void;
 };
 
 const THEMES: { id: ThemeId; label: string }[] = [
@@ -22,6 +23,7 @@ export default function ThemeSwitcher({
   className = '',
   variant = 'default',
   compact = false,
+  onChanged,
 }: Props) {
   const theme = useThemeStore((s) => s.theme);
   const setTheme = useThemeStore((s) => s.setTheme);
@@ -29,21 +31,23 @@ export default function ThemeSwitcher({
   const selectClasses = useMemo(
     () =>
       variant === 'header'
-        ? 'rounded px-2 py-1 text-sm bg-[rgb(var(--header-bg))] text-[rgb(var(--header-fg))] border border-[rgb(var(--header-fg))/30] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--header-fg))/25]'
-        : 'rounded px-2 py-1 text-sm bg-card text-fg border border-border focus:outline-none focus:ring-2 focus:ring-border/60',
+        ? 'rounded px-2 py-1 text-sm bg-[rgb(var(--header-bg))] text-[rgb(var(--header-fg))] border border-[rgb(var(--header-fg))/30] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--header-fg))/25] appearance-none pr-7'
+        : 'rounded px-2 py-1 text-sm bg-card text-fg border border-border focus:outline-none focus:ring-2 focus:ring-border/60 appearance-none pr-7',
     [variant],
   );
+
+  function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const val = e.target.value as ThemeId;
+    if (!THEMES.some((t) => t.id === val)) return; // type guard
+    setTheme(val);
+    onChanged?.(val);
+  }
 
   return (
     <label className={`inline-flex items-center gap-2 ${className}`}>
       {!compact && <span className="text-sm opacity-80">Theme</span>}
       <div className="relative inline-flex">
-        <select
-          aria-label="Theme"
-          className={`${selectClasses} appearance-none pr-7`}
-          value={theme}
-          onChange={(e) => setTheme(e.target.value as ThemeId)}
-        >
+        <select aria-label="Theme" className={selectClasses} value={theme} onChange={handleChange}>
           {THEMES.map((t) => (
             <option key={t.id} value={t.id}>
               {t.label}

@@ -378,7 +378,7 @@ export default function HomePage() {
         className="grid gap-3 sm:grid-cols-[1fr_1fr_120px] items-end mb-6"
         onSubmit={(e) => e.preventDefault()}
       >
-        <label className="block">
+        <label className="block min-w-0">
           <span className="block text-sm mb-1">From</span>
           <input
             type="date"
@@ -395,7 +395,7 @@ export default function HomePage() {
           />
         </label>
 
-        <label className="block">
+        <label className="block min-w-0">
           <span className="block text-sm mb-1">To</span>
           <input
             type="date"
@@ -409,7 +409,7 @@ export default function HomePage() {
           />
         </label>
 
-        <label className="block">
+        <label className="block min-w-0">
           <span className="block text-sm mb-1">Guests</span>
           <input
             type="number"

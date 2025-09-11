@@ -26,7 +26,7 @@ export default function App() {
       </a>
       <Header />
       {/* container provides centered max-width + padding */}
-      <main id="main" className="container py-6">
+      <main id="main" className="container py-6 overflow-x-clip">
         <Outlet />
       </main>
 
