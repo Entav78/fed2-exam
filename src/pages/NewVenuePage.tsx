@@ -47,7 +47,7 @@ export default function NewVenuePage() {
         <label className="block">
           <span className="form-label">Name</span>
           <input
-            className="input-field"
+            className="field"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -58,7 +58,7 @@ export default function NewVenuePage() {
           <label className="block">
             <span className="form-label">Price (NOK/night)</span>
             <input
-              className="input-field"
+              className="field"
               type="number"
               value={price}
               onChange={(e) => setPrice(+e.target.value)}
@@ -67,7 +67,7 @@ export default function NewVenuePage() {
           <label className="block">
             <span className="form-label">Max guests</span>
             <input
-              className="input-field"
+              className="field"
               type="number"
               value={maxGuests}
               onChange={(e) => setMaxGuests(+e.target.value)}
@@ -78,7 +78,7 @@ export default function NewVenuePage() {
         <label className="block">
           <span className="form-label">Image URL</span>
           <input
-            className="input-field"
+            className="field"
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
             placeholder="https://…"

@@ -304,7 +304,7 @@ export default function ManageVenuePage() {
           </label>
           <input
             id="name"
-            className="input-field"
+            className="field"
             value={form.name}
             onChange={onField('name')}
             required
@@ -317,7 +317,7 @@ export default function ManageVenuePage() {
           </label>
           <textarea
             id="description"
-            className="input-field"
+            className="field"
             value={form.description}
             onChange={onField('description')}
           />
@@ -332,7 +332,7 @@ export default function ManageVenuePage() {
               id="price"
               type="number"
               min={0}
-              className="input-field"
+              className="field"
               value={form.price}
               onChange={onField('price')}
             />
@@ -345,7 +345,7 @@ export default function ManageVenuePage() {
               id="maxGuests"
               type="number"
               min={1}
-              className="input-field"
+              className="field"
               value={form.maxGuests}
               onChange={onField('maxGuests')}
             />
@@ -360,14 +360,14 @@ export default function ManageVenuePage() {
             {form.images.map((img, i) => (
               <div key={i} className="grid gap-3 sm:grid-cols-2">
                 <input
-                  className="input-field"
+                  className="field"
                   placeholder="Image URL (https://...)"
                   value={img.url}
                   onChange={onImageField(i, 'url')}
                 />
                 <div className="flex gap-2">
                   <input
-                    className="input-field flex-1"
+                    className="field flex-1"
                     placeholder="Alt text"
                     value={img.alt}
                     onChange={onImageField(i, 'alt')}
@@ -424,31 +424,26 @@ export default function ManageVenuePage() {
           <summary className="cursor-pointer text-sm font-semibold">Location</summary>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <input
-              className="input-field"
+              className="field"
               placeholder="Address"
               value={form.address}
               onChange={onField('address')}
             />
             <input
-              className="input-field"
+              className="field"
               placeholder="City"
               value={form.city}
               onChange={onField('city')}
             />
+            <input className="field" placeholder="ZIP" value={form.zip} onChange={onField('zip')} />
             <input
-              className="input-field"
-              placeholder="ZIP"
-              value={form.zip}
-              onChange={onField('zip')}
-            />
-            <input
-              className="input-field"
+              className="field"
               placeholder="Country"
               value={form.country}
               onChange={onField('country')}
             />
             <input
-              className="input-field"
+              className="field"
               placeholder="Continent"
               value={form.continent}
               onChange={onField('continent')}
@@ -458,7 +453,7 @@ export default function ManageVenuePage() {
               type="number"
               step="any"
               inputMode="decimal"
-              className="input-field"
+              className="field"
               placeholder="Lat"
               value={form.lat}
               onChange={onField('lat')}
@@ -468,7 +463,7 @@ export default function ManageVenuePage() {
               type="number"
               step="any"
               inputMode="decimal"
-              className="input-field"
+              className="field"
               placeholder="Lng"
               value={form.lng}
               onChange={onField('lng')}

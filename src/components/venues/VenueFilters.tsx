@@ -58,10 +58,10 @@ export default function VenueFilters({
   };
 
   return (
-    <div className="grid gap-3 rounded border border-border-light bg-card p-3 md:grid-cols-4">
+    <div className="grid gap-3 rounded border border-border bg-card p-3 md:grid-cols-4">
       {/* Search */}
       <input
-        className="input-field md:col-span-2"
+        className="field md:col-span-2"
         placeholder="Search venues…"
         value={value.q}
         onChange={onText('q')}
@@ -70,16 +70,18 @@ export default function VenueFilters({
       {/* Price min / max */}
       <div className="flex gap-2">
         <input
-          className="input-field"
+          className="field"
           placeholder="Min price"
           inputMode="numeric"
+          pattern="[0-9]*"
           value={value.minPrice ?? ''}
           onChange={onText('minPrice')}
         />
         <input
-          className="input-field"
+          className="field"
           placeholder="Max price"
           inputMode="numeric"
+          pattern="[0-9]*"
           value={value.maxPrice ?? ''}
           onChange={onText('maxPrice')}
         />
@@ -87,7 +89,7 @@ export default function VenueFilters({
 
       {/* Sort (combined) */}
       <div className="flex gap-2">
-        <select className="input-field" value={sortKey} onChange={onSortKey}>
+        <select className="field" value={sortKey} onChange={onSortKey}>
           <option value="created:desc">Newest</option>
           <option value="price:asc">Price: Low → High</option>
           <option value="price:desc">Price: High → Low</option>
@@ -98,24 +100,47 @@ export default function VenueFilters({
 
       {/* Toggles */}
       <div className="md:col-span-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={!!value.wifi} onChange={onBool('wifi')} /> Wifi
+        <label className="inline-flex items-center gap-2 text-sm cursor-pointer select-none">
+          <input
+            className="h-4 w-4"
+            type="checkbox"
+            checked={!!value.wifi}
+            onChange={onBool('wifi')}
+          />
+          <span>Wifi</span>
         </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={!!value.parking} onChange={onBool('parking')} /> Parking
+        <label className="inline-flex items-center gap-2 text-sm cursor-pointer select-none">
+          <input
+            className="h-4 w-4"
+            type="checkbox"
+            checked={!!value.parking}
+            onChange={onBool('parking')}
+          />
+          <span>Parking</span>
         </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={!!value.breakfast} onChange={onBool('breakfast')} />{' '}
-          Breakfast
+        <label className="inline-flex items-center gap-2 text-sm cursor-pointer select-none">
+          <input
+            className="h-4 w-4"
+            type="checkbox"
+            checked={!!value.breakfast}
+            onChange={onBool('breakfast')}
+          />
+          <span>Breakfast</span>
         </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={!!value.pets} onChange={onBool('pets')} /> Pets
+        <label className="inline-flex items-center gap-2 text-sm cursor-pointer select-none">
+          <input
+            className="h-4 w-4"
+            type="checkbox"
+            checked={!!value.pets}
+            onChange={onBool('pets')}
+          />
+          <span>Pets</span>
         </label>
       </div>
 
       {/* Country & City */}
       <div className="grid grid-cols-2 gap-2 md:col-span-2">
-        <select className="input-field" value={value.country ?? ''} onChange={onCountryChange}>
+        <select className="field" value={value.country ?? ''} onChange={onCountryChange}>
           <option value="">All countries</option>
           {countries.map((c) => (
             <option key={c} value={c}>
@@ -125,7 +150,7 @@ export default function VenueFilters({
         </select>
 
         <select
-          className="input-field"
+          className="field"
           value={value.city ?? ''}
           onChange={onText('city')}
           disabled={!value.country || cities.length === 0}
@@ -141,11 +166,7 @@ export default function VenueFilters({
       </div>
 
       <div className="md:col-span-4 flex justify-end">
-        <button
-          type="button"
-          className="rounded border border-border-light px-3 py-1 text-sm"
-          onClick={onClear}
-        >
+        <button type="button" className="btn-ghost" onClick={onClear}>
           Clear filters
         </button>
       </div>

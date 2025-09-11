@@ -4,6 +4,11 @@
 @tailwind utilities;
 
 @layer base {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
   h1 {
     @apply text-2xl md:text-3xl font-bold text-center mb-4;
   }
@@ -12,21 +17,37 @@
 @layer components {
   /* shared card shell used across the app */
   .card {
-    @apply rounded border border-border-light bg-card p-4 shadow;
+    @apply rounded border border-border bg-card p-4 shadow;
   }
 
   /* small, quiet button used in cards */
   .mini-btn {
-    @apply rounded border border-border-light px-3 py-1 text-sm hover:bg-muted whitespace-nowrap;
+    @apply rounded border border-border px-3 py-1 text-sm hover:bg-[rgb(var(--fg))/0.05] whitespace-nowrap;
   }
 
   /* shared input look (you already use this name in a few places) */
   .input-field {
-    @apply w-full rounded-md border border-border-light px-3 py-2;
+    @apply w-full rounded-md border border-border bg-card text-fg px-3 py-2;
   }
 
   /* new: consistent thumbnails everywhere */
   .thumb {
     @apply h-16 w-16 rounded object-cover;
+  }
+
+  .field {
+    @apply w-full h-10 rounded-md border border-border bg-card text-fg px-3 text-sm leading-5
+           focus:outline-none focus:ring-2 focus:ring-[rgb(var(--fg))/0.1] focus:border-[rgb(var(--fg))/20];
+  }
+
+  /* Multi-line inputs */
+  .field-textarea {
+    @apply w-full min-h-24 rounded-md border border-border bg-card text-fg px-3 py-2 text-sm leading-5 align-top
+           focus:outline-none focus:ring-2 focus:ring-[rgb(var(--fg))/0.1] focus:border-[rgb(var(--fg))/20];
+  }
+
+  /* Quiet button */
+  .btn-ghost {
+    @apply rounded-md border border-border bg-transparent px-3 py-2 text-sm hover:bg-[rgb(var(--fg))/0.05];
   }
 }

@@ -391,7 +391,7 @@ export default function HomePage() {
                 setDateTo(toISODate(addDays(new Date(v), 1))); // bump 'to' forward
               }
             }}
-            className="w-full rounded-md border border-border-light px-3 py-2"
+            className="field rounded-md border border-border-light px-3 py-2"
           />
         </label>
 
@@ -405,7 +405,7 @@ export default function HomePage() {
               const v = e.target.value;
               setDateTo(v <= dateFrom ? minTo : v); // guard manual typing
             }}
-            className="w-full rounded-md border border-border-light px-3 py-2"
+            className="field rounded-md border border-border-light px-3 py-2"
           />
         </label>
 
@@ -416,23 +416,27 @@ export default function HomePage() {
             min={1}
             value={guests}
             onChange={(e) => setGuests(Math.max(1, Number(e.target.value)))}
-            className="w-full rounded-md border border-border-light px-3 py-2"
+            className="field rounded-md border border-border-light px-3 py-2"
           />
         </label>
-        <div className="mb-3 flex items-center gap-2">
+        <label className="mb-3 inline-flex items-center gap-2 cursor-pointer select-none">
           <input
-            id="include-no-image"
             type="checkbox"
             checked={includeNoImage}
             onChange={(e) => setIncludeNoImage(e.target.checked)}
+            className="h-4 w-4"
           />
-          <label htmlFor="include-no-image" className="text-sm">
-            Include venues without photo/map
-          </label>
+          <span className="text-sm">Include venues without photo/map</span>
           {!includeNoImage && hiddenCount > 0 && (
-            <span className="text-xs text-muted">({hiddenCount} hidden)</span>
+            <span className="text-xs opacity-70">({hiddenCount} hidden)</span>
           )}
-        </div>
+        </label>
+        <label htmlFor="include-no-image" className="text-sm">
+          Include venues without photo/map
+        </label>
+        {!includeNoImage && hiddenCount > 0 && (
+          <span className="text-xs text-muted">({hiddenCount} hidden)</span>
+        )}
       </form>
 
       {loading && <p>Loading…</p>}

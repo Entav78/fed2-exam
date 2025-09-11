@@ -109,13 +109,13 @@ export default function ProfileMediaEditor() {
           </label>
           <input
             id="bannerUrl"
-            className="input-field"
+            className="field"
             placeholder="https://…"
             value={form.bannerUrl}
             onChange={on('bannerUrl')}
           />
           <input
-            className="input-field mt-2"
+            className="field mt-2"
             placeholder="Banner alt text"
             value={form.bannerAlt}
             onChange={on('bannerAlt')}
@@ -146,13 +146,13 @@ export default function ProfileMediaEditor() {
           </label>
           <input
             id="avatarUrl"
-            className="input-field"
+            className="field"
             placeholder="https://…"
             value={form.avatarUrl}
             onChange={on('avatarUrl')}
           />
           <input
-            className="input-field mt-2"
+            className="field mt-2"
             placeholder="Avatar alt text"
             value={form.avatarAlt}
             onChange={on('avatarAlt')}

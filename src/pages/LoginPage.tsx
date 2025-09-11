@@ -123,7 +123,7 @@ const LoginPage = () => {
               id="email"
               type="email"
               autoComplete="username"
-              className="input-field"
+              className="field"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -139,7 +139,7 @@ const LoginPage = () => {
               id="password"
               type="password"
               autoComplete="current-password"
-              className="input-field"
+              className="field"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

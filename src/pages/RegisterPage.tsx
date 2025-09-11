@@ -83,7 +83,7 @@ export default function RegisterPage() {
             </label>
             <input
               id="name"
-              className="input-field"
+              className="field"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -98,7 +98,7 @@ export default function RegisterPage() {
             <input
               id="email"
               type="email"
-              className="input-field"
+              className="field"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -117,7 +117,7 @@ export default function RegisterPage() {
               <input
                 id="password"
                 type="password"
-                className="input-field"
+                className="field"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -131,7 +131,7 @@ export default function RegisterPage() {
               <input
                 id="confirm"
                 type="password"
-                className="input-field"
+                className="field"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 required
