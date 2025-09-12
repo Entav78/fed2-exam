@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
 import { API_PROFILES, buildHeaders, getLoginUrl } from '@/lib/api/constants';
@@ -33,7 +33,23 @@ function extractApiError(json: unknown, fallback = 'Login failed') {
 }
 
 const LoginPage = () => {
+  const location = useLocation();
   const navigate = useNavigate();
+
+  const redirect = (() => {
+    const raw = new URLSearchParams(location.search).get('redirect') || '/';
+    // allow only safe, same-site paths and avoid loops
+    if (
+      !raw.startsWith('/') || // external or malformed
+      raw.startsWith('//') || // protocol-relative
+      raw.includes('://') || // absolute URL
+      raw.startsWith('/login') || // don't bounce back to login
+      raw.startsWith('/register') // don't bounce back to register
+    ) {
+      return '/';
+    }
+    return raw;
+  })();
   const login = useAuthStore((s) => s.login);
 
   const [email, setEmail] = useState('');
@@ -100,7 +116,7 @@ const LoginPage = () => {
       });
 
       toast.success('Logged in successfully!');
-      navigate('/');
+      navigate(redirect, { replace: true });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Login failed';
       setError(msg);
@@ -148,7 +164,7 @@ const LoginPage = () => {
 
           {error && <p className="text-danger text-sm">{error}</p>}
 
-          <Button type="submit" variant="form" disabled={isLoading} className="w-full">
+          <Button type="submit" variant="primary" disabled={isLoading} className="w-full">
             {isLoading ? '🔄 Logging in...' : 'Login'}
           </Button>
         </form>

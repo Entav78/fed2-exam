@@ -375,7 +375,10 @@ export default function HomePage() {
 
       {/* Availability form */}
       <form
-        className="grid gap-3 sm:grid-cols-[1fr_1fr_120px] items-end mb-6"
+        className="
+    grid gap-3 items-end mb-6 overflow-hidden max-w-full
+    sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_120px]
+  "
         onSubmit={(e) => e.preventDefault()}
       >
         <label className="block min-w-0">
@@ -383,15 +386,13 @@ export default function HomePage() {
           <input
             type="date"
             value={dateFrom}
-            min={todayISO} // optional: disallow past dates
+            min={todayISO}
             onChange={(e) => {
               const v = e.target.value;
               setDateFrom(v);
-              if (dateTo <= v) {
-                setDateTo(toISODate(addDays(new Date(v), 1))); // bump 'to' forward
-              }
+              if (dateTo <= v) setDateTo(toISODate(addDays(new Date(v), 1)));
             }}
-            className="field rounded-md border border-border-light px-3 py-2"
+            className="field w-full"
           />
         </label>
 
@@ -400,12 +401,12 @@ export default function HomePage() {
           <input
             type="date"
             value={dateTo}
-            min={minTo} // at least the day after 'from'
+            min={minTo}
             onChange={(e) => {
               const v = e.target.value;
-              setDateTo(v <= dateFrom ? minTo : v); // guard manual typing
+              setDateTo(v <= dateFrom ? minTo : v);
             }}
-            className="field rounded-md border border-border-light px-3 py-2"
+            className="field w-full"
           />
         </label>
 
@@ -416,11 +417,13 @@ export default function HomePage() {
             min={1}
             value={guests}
             onChange={(e) => setGuests(Math.max(1, Number(e.target.value)))}
-            className="field rounded-md border border-border-light px-3 py-2"
+            className="field w-full"
           />
         </label>
-        <label className="mb-3 inline-flex items-center gap-2 cursor-pointer select-none">
+
+        <label className="mb-3 inline-flex items-center gap-2 cursor-pointer select-none min-w-0">
           <input
+            id="include-no-image"
             type="checkbox"
             checked={includeNoImage}
             onChange={(e) => setIncludeNoImage(e.target.checked)}
@@ -431,12 +434,6 @@ export default function HomePage() {
             <span className="text-xs opacity-70">({hiddenCount} hidden)</span>
           )}
         </label>
-        <label htmlFor="include-no-image" className="text-sm">
-          Include venues without photo/map
-        </label>
-        {!includeNoImage && hiddenCount > 0 && (
-          <span className="text-xs text-muted">({hiddenCount} hidden)</span>
-        )}
       </form>
 
       {loading && <p>Loading…</p>}

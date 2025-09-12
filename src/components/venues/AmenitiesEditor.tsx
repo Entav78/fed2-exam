@@ -21,7 +21,8 @@ export default function AmenitiesEditor({ value, onChange, disabled }: Props) {
     onChange({ wifi: val, parking: val, breakfast: val, pets: val });
   }
 
-  const row = 'flex items-center gap-2';
+  const row = 'flex items-center gap-2 cursor-pointer select-none';
+  const cb = 'h-4 w-4 accent-[rgb(var(--brand))]';
 
   return (
     <fieldset className="rounded border border-border-light p-3 bg-card">
@@ -31,7 +32,7 @@ export default function AmenitiesEditor({ value, onChange, disabled }: Props) {
         <label className={row}>
           <input
             type="checkbox"
-            className="h-4 w-4"
+            className={cb}
             checked={!!meta.wifi}
             onChange={(e) => setFlag('wifi', e.target.checked)}
             disabled={disabled}
@@ -42,7 +43,7 @@ export default function AmenitiesEditor({ value, onChange, disabled }: Props) {
         <label className={row}>
           <input
             type="checkbox"
-            className="h-4 w-4"
+            className={cb}
             checked={!!meta.parking}
             onChange={(e) => setFlag('parking', e.target.checked)}
             disabled={disabled}
@@ -53,7 +54,7 @@ export default function AmenitiesEditor({ value, onChange, disabled }: Props) {
         <label className={row}>
           <input
             type="checkbox"
-            className="h-4 w-4"
+            className={cb}
             checked={!!meta.breakfast}
             onChange={(e) => setFlag('breakfast', e.target.checked)}
             disabled={disabled}
@@ -64,7 +65,7 @@ export default function AmenitiesEditor({ value, onChange, disabled }: Props) {
         <label className={row}>
           <input
             type="checkbox"
-            className="h-4 w-4"
+            className={cb}
             checked={!!meta.pets}
             onChange={(e) => setFlag('pets', e.target.checked)}
             disabled={disabled}

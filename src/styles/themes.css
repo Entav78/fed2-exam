@@ -211,3 +211,15 @@
 
   color-scheme: dark;
 }
+
+/* ---- Force native UI (select, date picker, etc.) to match the theme ---- */
+html {
+  color-scheme: light;
+} /* default for light themes */
+html[data-theme='brown'],
+html[data-theme='dark'],
+html[data-theme='neon'],
+html[data-theme='green-dark'],
+html[data-theme='blue-dark'] {
+  color-scheme: dark;
+}

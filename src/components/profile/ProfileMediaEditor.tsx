@@ -27,14 +27,15 @@ function Collapsible({
 
   return (
     <div className="mt-3">
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="sm"
         onClick={() => setOpen((v) => !v)}
-        className="btn-ghost flex items-center gap-2"
         aria-expanded={open}
         aria-controls={id}
+        className="flex items-center gap-2"
       >
-        {/* chevron */}
         <svg
           className={`h-4 w-4 transition-transform ${open ? 'rotate-90' : ''}`}
           viewBox="0 0 20 20"
@@ -45,7 +46,7 @@ function Collapsible({
         <span>
           {open ? 'Hide' : 'Edit'} {label.toLowerCase()}
         </span>
-      </button>
+      </Button>
 
       <div id={id} className={open ? 'mt-3 grid gap-2 sm:grid-cols-3' : 'hidden'}>
         {children}
@@ -246,20 +247,29 @@ export default function ProfileMediaEditor() {
 
       {/* Actions */}
       <div className="mt-4 flex justify-end gap-2">
-        <Button onClick={save} disabled={!canSave}>
-          {busy ? 'Saving…' : 'Save'}
+        <Button
+          variant={canSave ? 'primary' : 'outline'}
+          disabled={!canSave || busy}
+          isLoading={busy}
+          onClick={save}
+        >
+          Save
         </Button>
+
         <Button
           type="button"
+          variant="outline"
           onClick={() => setForm((s) => ({ ...s, avatarUrl: '', avatarAlt: '' }))}
-          className="border border-border-light"
+          disabled={!form.avatarUrl.trim()}
         >
           Clear avatar
         </Button>
+
         <Button
           type="button"
+          variant="outline"
           onClick={() => setForm((s) => ({ ...s, bannerUrl: '', bannerAlt: '' }))}
-          className="border border-border-light"
+          disabled={!form.bannerUrl.trim()}
         >
           Clear banner
         </Button>

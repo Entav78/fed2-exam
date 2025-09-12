@@ -1,24 +1,10 @@
-import { Link } from 'react-router-dom';
+// src/components/ui/MiniButton.tsx
+import type { ComponentProps } from 'react';
 
-type Props = {
-  to?: string;
-  children: React.ReactNode;
-  className?: string;
-} & React.ButtonHTMLAttributes<HTMLButtonElement>;
+import { Button } from './Button';
 
-export function MiniButton({ to, children, className = '', ...rest }: Props) {
-  const base =
-    'inline-flex items-center justify-center rounded border border-border-light px-3 py-1 text-sm leading-tight hover:bg-muted whitespace-nowrap';
-  if (to) {
-    return (
-      <Link to={to} className={`${base} ${className}`}>
-        {children}
-      </Link>
-    );
-  }
-  return (
-    <button {...rest} className={`${base} ${className}`}>
-      {children}
-    </button>
-  );
+export function MiniButton(props: ComponentProps<typeof Button>) {
+  // default to small outline buttons
+  const { size = 'sm', variant = 'outline', ...rest } = props;
+  return <Button size={size} variant={variant} {...rest} />;
 }

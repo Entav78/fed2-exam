@@ -16,7 +16,7 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen grid grid-rows-[auto_1fr_auto] bg-background text-text font-sans antialiased">
+    <div className="min-h-screen grid grid-rows-[auto_1fr_auto] bg-bg text-text font-sans antialiased">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4

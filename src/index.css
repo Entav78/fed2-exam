@@ -4,11 +4,26 @@
 @tailwind utilities;
 
 @layer base {
+  /* Prevent iOS zoom + allow fields to shrink in grids */
   input,
   select,
   textarea {
     font-size: 16px;
+    min-width: 0;
   }
+
+  select option,
+  select optgroup {
+    color: CanvasText;
+    background-color: Canvas;
+  }
+
+  /* Theme-colored controls */
+  input[type='checkbox'],
+  input[type='radio'] {
+    accent-color: rgb(var(--brand));
+  }
+
   h1 {
     @apply text-2xl md:text-3xl font-bold text-center mb-4;
   }

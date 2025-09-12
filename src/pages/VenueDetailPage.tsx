@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import toast from 'react-hot-toast';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
 import AmenitiesList from '@/components/venues/AmenitiesList';
@@ -34,9 +34,14 @@ export default function VenueDetailPage() {
   const [fallbackCoords, setFallbackCoords] = useState<GeocodeHit | null>(null);
   const [range, setRange] = useState<DateRange | undefined>();
   const loggedIn = useAuthStore((s) => s.isLoggedIn());
+  const navigate = useNavigate();
   const currentUser = useAuthStore((s) => s.user);
   const [guests, setGuests] = useState(1);
   const [bookingBusy, setBookingBusy] = useState(false);
+  const location = useLocation();
+
+  const missingDates = !range?.from || !range?.to;
+  const ctaDisabled = bookingBusy || missingDates;
 
   // fetch venue
   useEffect(() => {
@@ -173,6 +178,15 @@ export default function VenueDetailPage() {
     }
   }
 
+  function onBookClick() {
+    if (!loggedIn) {
+      const redirect = location.pathname + location.search;
+      navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
+      return;
+    }
+    handleBook();
+  }
+
   return (
     <article className="mx-auto max-w-5xl space-y-6">
       <Link to="/" className="text-brand underline">
@@ -231,20 +245,41 @@ export default function VenueDetailPage() {
             onChange={(e) =>
               setGuests(Math.max(1, Math.min(venue.maxGuests, Number(e.target.value) || 1)))
             }
-            className="ml-2 w-20 input-field"
+            className="ml-2 w-20 field" // was: "input-field"
           />
           <span className="ml-2 opacity-70">/ max {venue.maxGuests}</span>
         </label>
 
-        <Button
-          onClick={handleBook}
-          disabled={!loggedIn || bookingBusy || !range?.from || !range?.to}
-          isLoading={bookingBusy}
-          className="ml-auto"
-          variant="form"
-        >
-          Book this venue
-        </Button>
+        <div className="ml-auto text-right">
+          {!loggedIn && (
+            <p className="mb-1 text-sm text-muted">
+              You must{' '}
+              <Link
+                to={`/login?redirect=${encodeURIComponent(`/venues/${venue.id}`)}`}
+                className="underline text-brand"
+              >
+                log in
+              </Link>{' '}
+              to book.
+            </p>
+          )}
+
+          <Button
+            onClick={onBookClick}
+            disabled={ctaDisabled}
+            isLoading={bookingBusy}
+            variant="primary"
+            title={
+              missingDates
+                ? 'Pick check-in and check-out first'
+                : !loggedIn
+                  ? 'Log in to book'
+                  : undefined
+            }
+          >
+            Book this venue
+          </Button>
+        </div>
       </div>
 
       {/* Location */}
@@ -271,12 +306,9 @@ export default function VenueDetailPage() {
       </section>
 
       <div className="flex gap-3">
-        <button
-          className="rounded border border-border-light px-4 py-2"
-          onClick={() => window.history.back()}
-        >
+        <Button variant="outline" onClick={() => window.history.back()}>
           Go back
-        </button>
+        </Button>
       </div>
     </article>
   );

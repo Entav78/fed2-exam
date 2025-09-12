@@ -46,7 +46,14 @@ export default function ThemeSwitcher({
   return (
     <label className={`inline-flex items-center gap-2 ${className}`}>
       {!compact && <span className="text-sm opacity-80">Theme</span>}
-      <div className="relative inline-flex">
+      <div
+        className="
+      relative inline-flex rounded-md
+      hover:shadow-[0_0_0_2px_rgba(255,255,255,.15)]
+      focus-within:ring-2
+      focus-within:ring-[rgb(var(--header-fg))/25]
+    "
+      >
         <select aria-label="Theme" className={selectClasses} value={theme} onChange={handleChange}>
           {THEMES.map((t) => (
             <option key={t.id} value={t.id}>

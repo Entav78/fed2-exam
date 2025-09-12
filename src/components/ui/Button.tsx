@@ -1,50 +1,60 @@
 import React from 'react';
 
-type ButtonVariant = 'primary' | 'secondary' | 'form';
+type Variant = 'outline' | 'primary' | 'danger' | 'ghost';
+type Size = 'sm' | 'md' | 'lg';
 
 type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  /** Visual style */
-  variant?: ButtonVariant;
-  /** Show loading state and disable clicks */
+  variant?: Variant;
+  size?: Size;
   isLoading?: boolean;
 };
 
-function cx(...parts: Array<string | false | undefined>) {
+function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(' ');
 }
 
+const sizes: Record<Size, string> = {
+  sm: 'px-3 py-1.5 text-sm',
+  md: 'px-4 py-2 text-sm',
+  lg: 'px-5 py-2.5 text-base',
+};
+
+const variants: Record<Variant, string> = {
+  /** strong CTA (Save, Login, Register) */
+  /** bordered neutral actions (Clear, Open, Manage, Change dates, etc.) */
+  outline: `
+    bg-transparent text-fg border border-border
+    hover:bg-[rgb(var(--fg))/0.08] hover:border-[rgb(var(--fg))/25]
+    focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand))/40]
+  `,
+
+  primary: `
+    bg-brand text-on-brand
+    hover:bg-brand/90
+    focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand))/40]
+  `,
+
+  /** quiet text like “Close” in a dialog header */
+  ghost: `
+    text-fg hover:bg-[rgb(var(--fg))/0.06]
+    focus-visible:ring-2 focus-visible:ring-[rgb(var(--brand))/30]
+  `,
+  /** destructive */
+  danger: `
+    bg-danger text-white hover:bg-danger/90
+    focus-visible:ring-2 focus-visible:ring-[rgb(var(--danger))/35]
+  `,
+};
+
 export function Button({
   children,
-  variant = 'primary',
+  variant = 'outline', // ← was "primary"
+  size = 'md',
   isLoading = false,
   disabled,
   className,
   ...rest
 }: Props) {
-  const base = 'px-4 py-2 rounded font-medium transition-colors duration-300';
-
-  const variants: Record<ButtonVariant, string> = {
-    primary: `
-      bg-primary 
-      hover:bg-primary-hover 
-      text-text-button-light
-    `,
-    secondary: `
-      bg-secondary
-      hover:bg-secondary-hover
-      text-text-base
-      border-dark
-    `,
-    form: `
-      bg-secondary
-      hover:bg-secondary-hover
-      text-inherit
-      border border-border-light
-      dark:text-text-dark
-      dark:border-border-dark
-    `,
-  };
-
   const isDisabled = isLoading || !!disabled;
 
   return (
@@ -52,7 +62,10 @@ export function Button({
       {...rest}
       disabled={isDisabled}
       className={cx(
-        base,
+        'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors duration-200',
+        'focus-visible:outline-none focus-visible:ring-offset-2',
+        'focus-visible:ring-offset-[rgb(var(--card))]',
+        sizes[size],
         variants[variant],
         isDisabled && 'opacity-50 cursor-not-allowed',
         className,

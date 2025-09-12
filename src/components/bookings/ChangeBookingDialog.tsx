@@ -140,9 +140,9 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
           <h3 id={titleId} className="text-lg font-semibold">
             Change booking
           </h3>
-          <button type="button" onClick={onClose} className="text-sm underline">
+          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
             Close
-          </button>
+          </Button>
         </div>
 
         {loading ? (
@@ -157,7 +157,7 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
 
             <BookingCalendar bookings={bookingsLite} selected={range} onSelect={handleSelect} />
 
-            {/* Action bar (Option A) */}
+            {/* Action bar */}
             <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-muted" aria-live="polite">
                 {range?.from && range?.to
@@ -166,21 +166,25 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
               </div>
 
               <div className="flex items-center gap-2">
-                <button
+                {/* was a raw <button> with border classes */}
+                <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => setRange(undefined)}
-                  className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted focus:outline-none focus:ring-2 focus:ring-brand/50"
                   title="Clear selected dates"
                 >
                   <span aria-hidden>🧹</span>
                   <span className="ml-1">Clear dates</span>
-                </button>
+                </Button>
 
+                {/* was variant="form" */}
                 <Button
                   onClick={save}
                   disabled={busy || !range?.from || !range?.to || !canBook}
                   isLoading={busy}
-                  variant="form"
+                  variant="primary"
+                  size="sm"
                 >
                   Save changes
                 </Button>
@@ -199,7 +203,7 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
                   onChange={(e) =>
                     setGuests(Math.max(1, Math.min(venue.maxGuests, Number(e.target.value) || 1)))
                   }
-                  className="ml-2 w-20 input-field"
+                  className="ml-2 w-20 field"
                 />
                 <span className="ml-2 opacity-70">/ max {venue.maxGuests}</span>
               </label>

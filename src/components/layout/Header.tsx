@@ -26,49 +26,33 @@ export default function Header() {
   const menuLink = 'block w-full text-left px-4 py-2 hover:underline transition';
 
   return (
-    <header
-      className="
-    sticky top-0 z-50
-    bg-[rgb(var(--header-bg))] text-[rgb(var(--header-fg))]
-  "
-    >
-      <div className="container flex items-center justify-between py-3">
-        {/* Brand */}
+    <header className="sticky top-0 z-50 bg-[rgb(var(--header-bg))] text-[rgb(var(--header-fg))]">
+      <div className="container flex items-center py-3">
+        {/* Brand (left) */}
         <Link to="/" className="text-lg font-bold">
           Holidaze
         </Link>
 
-        {/* Desktop nav */}
-        <nav className="hidden items-center gap-6 text-lg font-medium sm:flex">
-          <NavLink to="/" className={link}>
-            Home
-          </NavLink>
-
-          {isLoggedIn && (
-            <>
-              <NavLink to="/profile" className={link}>
-                Profile
-                {alertCount > 0 && (
-                  <span className="ml-2 inline-flex rounded-full bg-danger px-2 py-0.5 text-xs font-bold text-on-danger">
-                    {alertCount}
-                  </span>
-                )}
-              </NavLink>
-              <NavLink to="/bookings" className={link}>
-                My bookings
-              </NavLink>
-            </>
-          )}
-
-          {isManager && (
-            <NavLink to="/manage" className={link}>
-              Manage venues
+        {/* Right side (nav + auth) */}
+        <div className="hidden sm:flex items-center gap-6 ml-auto">
+          <nav className="flex items-center gap-6 text-lg font-medium">
+            <NavLink to="/" className={link}>
+              Home
             </NavLink>
-          )}
-        </nav>
+            <NavLink to="/profile" className={link}>
+              Profile
+            </NavLink>
+            <NavLink to="/bookings" className={link}>
+              My bookings
+            </NavLink>
+            {isManager && (
+              <NavLink to="/manage" className={link}>
+                Manage venues
+              </NavLink>
+            )}
+          </nav>
 
-        {/* Right actions (desktop) */}
-        <div className="hidden sm:flex items-center gap-3">
+          {/* Auth actions (optional keep here so they’re also right-aligned) */}
           {!isLoggedIn ? (
             <>
               <NavLink to="/login" className={link}>

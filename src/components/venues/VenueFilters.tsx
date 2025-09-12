@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { Button } from '@/components/ui/Button';
+
 export type VenueFiltersState = {
   q: string;
   minPrice?: string;
@@ -102,8 +104,8 @@ export default function VenueFilters({
       <div className="md:col-span-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <label className="inline-flex items-center gap-2 text-sm cursor-pointer select-none">
           <input
-            className="h-4 w-4"
             type="checkbox"
+            className="h-4 w-4 accent-[rgb(var(--brand))]"
             checked={!!value.wifi}
             onChange={onBool('wifi')}
           />
@@ -111,8 +113,8 @@ export default function VenueFilters({
         </label>
         <label className="inline-flex items-center gap-2 text-sm cursor-pointer select-none">
           <input
-            className="h-4 w-4"
             type="checkbox"
+            className="h-4 w-4 accent-[rgb(var(--brand))]"
             checked={!!value.parking}
             onChange={onBool('parking')}
           />
@@ -120,8 +122,8 @@ export default function VenueFilters({
         </label>
         <label className="inline-flex items-center gap-2 text-sm cursor-pointer select-none">
           <input
-            className="h-4 w-4"
             type="checkbox"
+            className="h-4 w-4 accent-[rgb(var(--brand))]"
             checked={!!value.breakfast}
             onChange={onBool('breakfast')}
           />
@@ -129,8 +131,8 @@ export default function VenueFilters({
         </label>
         <label className="inline-flex items-center gap-2 text-sm cursor-pointer select-none">
           <input
-            className="h-4 w-4"
             type="checkbox"
+            className="h-4 w-4 accent-[rgb(var(--brand))]"
             checked={!!value.pets}
             onChange={onBool('pets')}
           />
@@ -166,9 +168,9 @@ export default function VenueFilters({
       </div>
 
       <div className="md:col-span-4 flex justify-end">
-        <button type="button" className="btn-ghost" onClick={onClear}>
+        <Button variant="outline" size="sm" type="button" onClick={onClear}>
           Clear filters
-        </button>
+        </Button>
       </div>
     </div>
   );
