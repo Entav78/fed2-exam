@@ -206,16 +206,27 @@ export default function Header() {
             </li>
           )}
 
-          {isLoggedIn && displayName && (
-            <li className="pt-2 text-[rgb(var(--header-fg))/0.7]">
-              Logged in as <span className="font-semibold">{displayName}</span>
-              <span className="opacity-70"> ({isManager ? 'Manager' : 'Customer'})</span>
-              <ThemeSwitcher
-                variant="header"
-                className="ml-2"
-                onChanged={() => setMenuOpen(false)}
-              />
-            </li>
+          <hr className="my-4 border-[rgb(var(--header-fg))/20]" />
+
+          {isLoggedIn ? (
+            <div className="space-y-3 text-sm">
+              <div className="opacity-90">
+                Logged in as <strong>{displayName}</strong>
+                {isManager && <span className="opacity-70"> (Manager)</span>}
+              </div>
+
+              <div>
+                <span className="block mb-1 opacity-80">Theme</span>
+                <ThemeSwitcher variant="header" compact onChanged={() => setMenuOpen(false)} />
+              </div>
+
+              <LogoutButton className="underline" />
+            </div>
+          ) : (
+            <div className="text-sm">
+              <span className="block mb-1 opacity-80">Theme</span>
+              <ThemeSwitcher variant="header" compact onChanged={() => setMenuOpen(false)} />
+            </div>
           )}
         </ul>
       </div>

@@ -125,7 +125,7 @@ const LoginPage = () => {
       setIsLoading(false);
     }
   };
-
+  const canSubmit = email.trim() !== '' && password.trim() !== '';
   return (
     <section className="max-w-md mx-auto p-4">
       <div className="form-container">
@@ -164,8 +164,15 @@ const LoginPage = () => {
 
           {error && <p className="text-danger text-sm">{error}</p>}
 
-          <Button type="submit" variant="primary" disabled={isLoading} className="w-full">
-            {isLoading ? '🔄 Logging in...' : 'Login'}
+          <Button
+            type="submit"
+            variant={canSubmit ? 'primary' : 'outline'}
+            size="lg"
+            className="w-full"
+            isLoading={isLoading}
+            disabled={!canSubmit || isLoading}
+          >
+            Login
           </Button>
         </form>
       </div>

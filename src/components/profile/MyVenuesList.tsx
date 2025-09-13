@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { Button } from '@/components/ui/Button';
 import VenueCard from '@/components/venues/VenueCard';
 import { API_PROFILES, buildHeaders } from '@/lib/api/constants';
 import type { Venue } from '@/lib/api/venues';
@@ -41,19 +42,17 @@ export default function MyVenuesList() {
 
   const LIMIT = 3;
   const visible = expanded ? rows : rows.slice(0, LIMIT);
+  const listId = 'my-venues-list';
 
   return (
     <>
-      <ul className="grid gap-4 xl:grid-cols-2 auto-rows-fr list-none p-0 m-0">
+      <ul id={listId} className="grid gap-4 xl:grid-cols-2 auto-rows-fr list-none p-0 m-0">
         {visible.map((v) => (
           <li key={v.id}>
-            {/* row layout + consistent height */}
             <VenueCard venue={v} layout="row" showManage className="min-h-[112px]" />
           </li>
         ))}
-
         <li>
-          {/* Give the tile the same visual box as the row cards */}
           <div className="card min-h-[112px] flex items-center justify-center">
             <NewVenueTile />
           </div>
@@ -62,12 +61,15 @@ export default function MyVenuesList() {
 
       {rows.length > LIMIT && (
         <div className="mt-3">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setExpanded((s) => !s)}
-            className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
+            aria-expanded={expanded}
+            aria-controls={listId}
           >
             {expanded ? 'Show fewer' : `Show all (${rows.length})`}
-          </button>
+          </Button>
         </div>
       )}
     </>

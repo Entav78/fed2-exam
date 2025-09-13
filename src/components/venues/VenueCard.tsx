@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 
+import { Button } from '@/components/ui/Button';
 import { useGeocodedStaticMap } from '@/hooks/useGeocodedStaticMap';
 import type { Venue } from '@/lib/api/venues';
 import { handleImgErrorToMapThenPlaceholder } from '@/utils/venueImage';
@@ -58,18 +59,17 @@ export default function VenueCard({
         </div>
 
         <div className="ml-auto flex items-center gap-2 shrink-0">
-          <Link
-            to={`/venues/${venue.id}`}
-            className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
-          >
-            Open
+          <Link to={`/venues/${venue.id}`}>
+            <Button variant="outline" size="sm" type="button">
+              Open
+            </Button>
           </Link>
+
           {showManage && (
-            <Link
-              to={manageHref ?? `/manage/${venue.id}`}
-              className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
-            >
-              Manage
+            <Link to={manageHref ?? `/manage/${venue.id}`}>
+              <Button variant="outline" size="sm" type="button">
+                Manage
+              </Button>
             </Link>
           )}
         </div>

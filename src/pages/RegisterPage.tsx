@@ -70,6 +70,8 @@ export default function RegisterPage() {
       setIsLoading(false);
     }
   }
+  const canRegister =
+    name.trim() !== '' && email.trim() !== '' && password.trim() !== '' && password === confirm;
 
   return (
     <section className="mx-auto max-w-md p-4">
@@ -153,10 +155,13 @@ export default function RegisterPage() {
 
           <Button
             type="submit"
-            className={`w-full rounded bg-brand px-4 py-2 text-white ${isLoading ? 'opacity-50' : ''}`}
-            disabled={isLoading}
+            variant={canRegister ? 'primary' : 'outline'}
+            size="lg"
+            className="w-full"
+            isLoading={isLoading}
+            disabled={!canRegister || isLoading}
           >
-            {isLoading ? 'Registering…' : 'Register'}
+            Register
           </Button>
         </form>
       </div>

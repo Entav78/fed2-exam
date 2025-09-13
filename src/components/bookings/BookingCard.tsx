@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
-import { MiniButton } from '@/components/ui/MiniButton';
+import { Button } from '@/components/ui/Button';
 import type { Booking } from '@/lib/api/bookings';
 import { getVenueImage, handleImgErrorToPlaceholder } from '@/utils/venueImage';
 
@@ -38,7 +38,9 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
       {venueId ? (
         <Link
           to={`/venues/${venueId}`}
-          className="flex flex-1 min-w-0 items-center gap-4 -m-2 p-2 rounded hover:bg-muted/40"
+          className="group flex flex-1 min-w-0 items-center gap-4 -m-2 p-2 rounded
+             focus-visible:outline-none focus-visible:ring-2
+             focus-visible:ring-[rgb(var(--brand))/40]"
           title={`Open ${venueName}`}
         >
           <img
@@ -85,12 +87,22 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
       {/* Actions */}
       <div className="ml-auto flex items-center gap-2 shrink-0">
         {!!onChangeDates && !!venueId && !isPast && (
-          <MiniButton onClick={() => onChangeDates(booking)}>Change dates</MiniButton>
+          <Button size="sm" variant="outline" onClick={() => onChangeDates(booking)}>
+            Change dates
+          </Button>
         )}
         {!isPast && onCancel && (
-          <MiniButton onClick={() => onCancel(booking.id)} disabled={busy}>
+          <Button
+            size="sm"
+            variant="dangerOutline"
+            onClick={() => {
+              if (confirm('Cancel this booking?')) onCancel(booking.id);
+            }}
+            disabled={busy}
+            isLoading={busy}
+          >
             {busy ? 'Cancelling…' : 'Cancel'}
-          </MiniButton>
+          </Button>
         )}
       </div>
     </div>

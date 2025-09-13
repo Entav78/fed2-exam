@@ -353,7 +353,7 @@ export default function ManageVenuePage() {
         </div>
 
         {/* Images */}
-        <fieldset className="rounded border border-border-light p-3">
+        <fieldset className="rounded border border-border p-3">
           <legend className="text-sm font-semibold">Images</legend>
 
           <div className="space-y-3">
@@ -372,35 +372,34 @@ export default function ManageVenuePage() {
                     value={img.alt}
                     onChange={onImageField(i, 'alt')}
                   />
-                  <button
+                  <Button
                     type="button"
+                    size="sm"
+                    variant="dangerOutline"
                     onClick={() => removeImageRow(i)}
-                    className="rounded border border-border-light px-3 py-1 text-sm"
-                    aria-label={`Remove image ${i + 1}`}
                   >
                     Remove
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
 
           <div className="mt-3">
-            <button
+            <Button
               type="button"
+              size="sm"
+              variant="outline"
               onClick={addImageRow}
               disabled={form.images.length >= 12}
-              className={`rounded border border-border-light px-3 py-1 text-sm ${
-                form.images.length >= 12 ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
             >
               + Add image
-            </button>
+            </Button>
           </div>
         </fieldset>
 
         {/* Amenities */}
-        <fieldset className="rounded border border-border-light p-3">
+        <fieldset className="rounded border border-border p-3">
           <legend className="text-sm font-semibold">Amenities</legend>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <label className="flex items-center gap-2 text-sm">
@@ -420,7 +419,7 @@ export default function ManageVenuePage() {
         </fieldset>
 
         {/* Location */}
-        <details className="rounded border border-border-light p-3">
+        <details className="rounded border border-border p-3">
           <summary className="cursor-pointer text-sm font-semibold">Location</summary>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <input
@@ -473,16 +472,11 @@ export default function ManageVenuePage() {
 
         <div className="mt-6 flex items-center justify-end gap-3">
           {editing && (
-            <Button
-              type="button"
-              onClick={handleDelete}
-              disabled={busy}
-              className="border border-border-light"
-            >
+            <Button type="button" variant="dangerOutline" onClick={handleDelete} disabled={busy}>
               {busy ? 'Deleting…' : 'Delete'}
             </Button>
           )}
-          <Button type="submit" disabled={!canSubmit}>
+          <Button type="submit" variant="outline" disabled={!canSubmit || busy}>
             {busy ? (editing ? 'Saving…' : 'Creating…') : editing ? 'Save changes' : 'Create venue'}
           </Button>
         </div>
