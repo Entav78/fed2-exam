@@ -57,8 +57,9 @@
 
   /* Multi-line inputs */
   .field-textarea {
-    @apply w-full min-h-24 min-w-0 rounded-md border border-border bg-card text-fg px-3 py-2 text-sm leading-5 align-top
-           focus:outline-none focus:ring-2 focus:ring-[rgb(var(--fg))/0.1] focus:border-[rgb(var(--fg))/20];
+    @apply w-full min-h-32 min-w-0 rounded-md border border-border bg-card text-fg
+         px-3 py-3 text-sm leading-5 align-top resize-y
+         focus:outline-none focus:ring-2 focus:ring-[rgb(var(--fg))/0.1] focus:border-[rgb(var(--fg))/20];
   }
 
   /* Quiet button */

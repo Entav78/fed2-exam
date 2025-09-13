@@ -43,10 +43,7 @@ export default function VenueMap({ lat, lng, name = 'Venue', height = 300, zoom 
   const position: [number, number] = [lat, lng];
 
   return (
-    <div
-      className="w-full overflow-hidden rounded-lg border border-border-light"
-      style={{ height }}
-    >
+    <div className="w-full overflow-hidden rounded-lg border border-border" style={{ height }}>
       <MapContainer
         key={`${lat},${lng}`}
         center={position}

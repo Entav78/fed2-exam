@@ -53,9 +53,9 @@ export default function MyVenuesList() {
           </li>
         ))}
         <li>
-          <div className="card min-h-[112px] flex items-center justify-center">
-            <NewVenueTile />
-          </div>
+          <li>
+            <NewVenueTile className="min-h-[112px]" />
+          </li>
         </li>
       </ul>
 

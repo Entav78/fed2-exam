@@ -136,11 +136,11 @@ export default function ProfileMediaEditor() {
     dirty && !busy && (form.avatarUrl.trim().length > 0 || form.bannerUrl.trim().length > 0);
 
   return (
-    <section className="rounded border border-border-light bg-card p-4">
+    <section className="rounded border border-border bg-card p-4">
       <h2 className="mb-3 text-lg font-semibold">Profile images</h2>
 
       {/* Always-visible banner preview */}
-      <div className="overflow-hidden rounded border border-border-light">
+      <div className="overflow-hidden rounded border border-border">
         {form.bannerUrl ? (
           <img
             src={form.bannerUrl}
@@ -185,7 +185,7 @@ export default function ProfileMediaEditor() {
       {/* Always-visible avatar preview */}
 
       <div className="mt-6 flex items-center gap-4">
-        <div className="h-24 w-24 overflow-hidden rounded-full border border-border-light">
+        <div className="h-24 w-24 overflow-hidden rounded-full border border-border">
           {form.avatarUrl ? (
             <img
               src={form.avatarUrl}

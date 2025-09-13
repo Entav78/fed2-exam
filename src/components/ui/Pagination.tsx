@@ -17,7 +17,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pr
   return (
     <nav className="mt-6 flex items-center justify-center gap-2">
       <button
-        className="px-3 py-1 rounded border border-border-light hover:bg-surface"
+        className="px-3 py-1 rounded border border-border hover:bg-surface"
         onClick={() => go(currentPage - 1)}
         aria-label="Previous page"
         disabled={currentPage === 1}
@@ -32,7 +32,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pr
           className={`px-3 py-1 rounded border ${
             p === currentPage
               ? 'bg-brand text-white border-brand'
-              : 'border-border-light hover:bg-surface'
+              : 'border-border hover:bg-surface'
           }`}
           aria-current={p === currentPage ? 'page' : undefined}
         >
@@ -41,7 +41,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pr
       ))}
 
       <button
-        className="px-3 py-1 rounded border border-border-light hover:bg-surface"
+        className="px-3 py-1 rounded border border-border hover:bg-surface"
         onClick={() => go(currentPage + 1)}
         aria-label="Next page"
         disabled={currentPage === totalPages}

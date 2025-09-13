@@ -21,7 +21,7 @@ export default function AmenitiesList({ meta = {} as Meta }) {
       {enabled.map(({ key, label, icon }) => (
         <li
           key={String(key)}
-          className="rounded-full bg-surface px-3 py-1 text-sm border border-border-light"
+          className="rounded-full bg-surface px-3 py-1 text-sm border border-border"
           aria-label={label}
           title={label}
         >

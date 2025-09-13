@@ -20,7 +20,7 @@ export default function NotFoundPage() {
         </Link>
         <button
           onClick={() => window.history.back()}
-          className="inline-flex items-center gap-2 rounded border border-border-light px-4 py-2"
+          className="inline-flex items-center gap-2 rounded border border-border px-4 py-2"
         >
           ⟵ Go back
         </button>

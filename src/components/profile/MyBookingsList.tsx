@@ -111,7 +111,7 @@ export default function MyBookingsList() {
         <div className="mt-3">
           <Link
             to="/bookings"
-            className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
+            className="rounded border border-border px-3 py-1 text-sm hover:bg-muted"
           >
             View all bookings
           </Link>

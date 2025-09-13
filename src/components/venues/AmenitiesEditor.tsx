@@ -25,7 +25,7 @@ export default function AmenitiesEditor({ value, onChange, disabled }: Props) {
   const cb = 'h-4 w-4 accent-[rgb(var(--brand))]';
 
   return (
-    <fieldset className="rounded border border-border-light p-3 bg-card">
+    <fieldset className="rounded border border-border p-3 bg-card">
       <legend className="px-1 text-sm font-semibold">Amenities</legend>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

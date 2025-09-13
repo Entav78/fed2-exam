@@ -50,7 +50,7 @@ export default function VenueGallery({ venue }: Props) {
               <button
                 onClick={() => setActive(i)}
                 className={`h-16 w-24 overflow-hidden rounded border ${
-                  i === active ? 'ring-2 ring-brand' : 'border-border-light'
+                  i === active ? 'ring-2 ring-brand' : 'border-border'
                 }`}
                 aria-label={`Show image ${i + 1}`}
               >

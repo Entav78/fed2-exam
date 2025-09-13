@@ -53,7 +53,7 @@ export default function BookingCalendar({
   };
 
   return (
-    <div className="rounded-lg border border-border-light bg-card p-3">
+    <div className="rounded-lg border border-border bg-card p-3">
       <DayPicker
         mode="range"
         selected={selected}

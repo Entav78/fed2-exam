@@ -317,7 +317,8 @@ export default function ManageVenuePage() {
           </label>
           <textarea
             id="description"
-            className="field"
+            className="field-textarea"
+            rows={6} // optional; min-h handles the height too
             value={form.description}
             onChange={onField('description')}
           />

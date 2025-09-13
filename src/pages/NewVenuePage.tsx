@@ -40,10 +40,7 @@ export default function NewVenuePage() {
   return (
     <section className="mx-auto max-w-xl">
       <h1 className="mb-4 text-2xl font-bold">New venue</h1>
-      <form
-        onSubmit={onSubmit}
-        className="space-y-4 rounded border border-border-light bg-card p-4"
-      >
+      <form onSubmit={onSubmit} className="space-y-4 rounded border border-border bg-card p-4">
         <label className="block">
           <span className="form-label">Name</span>
           <input
@@ -121,7 +118,7 @@ export default function NewVenuePage() {
           </button>
           <button
             type="button"
-            className="rounded border border-border-light px-4 py-2"
+            className="rounded border border-border px-4 py-2"
             onClick={() => history.back()}
           >
             Cancel

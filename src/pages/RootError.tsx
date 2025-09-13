@@ -22,7 +22,7 @@ export default function RootError() {
           </Link>
           <button
             onClick={() => location.reload()}
-            className="rounded border border-border-light px-4 py-2"
+            className="rounded border border-border px-4 py-2"
           >
             Reload
           </button>
@@ -54,7 +54,7 @@ export default function RootError() {
         </Link>
         <button
           onClick={() => location.reload()}
-          className="rounded border border-border-light px-4 py-2"
+          className="rounded border border-border px-4 py-2"
         >
           Reload
         </button>

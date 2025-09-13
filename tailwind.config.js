@@ -53,7 +53,7 @@ export default {
         surface: 'rgb(var(--card) / <alpha-value>)',
 
         // Old names that appeared in code; map them to the new tokens
-        'border-light': 'rgb(var(--border) / <alpha-value>)', // alias -> use `border` then `/opacity`
+        //'border-light': 'rgb(var(--border) / <alpha-value>)', // alias -> use `border` then `/opacity`
         'border-dark': 'rgb(var(--border) / <alpha-value>)',
         cardOld: 'rgb(var(--card) / <alpha-value>)',
         darkCard: 'rgb(var(--input) / <alpha-value>)',

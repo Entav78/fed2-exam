@@ -462,7 +462,7 @@ export default function HomePage() {
           <button
             type="button"
             onClick={loadMore}
-            className="rounded border border-border-light px-3 py-1 text-sm hover:bg-muted"
+            className="rounded border border-border px-3 py-1 text-sm hover:bg-muted"
           >
             Load more
           </button>
