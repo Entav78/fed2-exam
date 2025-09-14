@@ -95,12 +95,12 @@ export default function VenueCard({
       <img
         src={src}
         alt={alt}
-        width={imgOpts.width}
-        height={imgOpts.height}
         className="h-40 w-full object-cover"
         loading={priority ? 'eager' : 'lazy'}
-        fetchPriority={priority ? 'high' : 'auto'}
+        fetchPriority={priority ? ('high' as const) : 'auto'}
         decoding="async"
+        width={width}
+        height={height}
         referrerPolicy="no-referrer"
         onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
       />
