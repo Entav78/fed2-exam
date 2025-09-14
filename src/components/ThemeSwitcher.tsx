@@ -45,7 +45,7 @@ export default function ThemeSwitcher({
 
   return (
     <label className={`inline-flex items-center gap-2 ${className}`}>
-      {!compact && <span className="text-sm opacity-80">Theme</span>}
+      {!compact && <span className="text-sm text-[rgb(var(--header-fg))/0.95]">Theme</span>}
       <div
         className="
       relative inline-flex rounded-md

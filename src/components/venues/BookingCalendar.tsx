@@ -64,7 +64,8 @@ export default function BookingCalendar({
         weekStartsOn={1}
         // Make disabled days (past + booked) look the same:
         classNames={{
-          day_disabled: 'bg-gray-100 text-gray-400 opacity-100 line-through',
+          day_disabled:
+            'bg-[rgb(var(--fg))/0.06] text-[rgb(var(--fg))/0.55] line-through cursor-not-allowed',
         }}
       />
 
@@ -76,7 +77,7 @@ export default function BookingCalendar({
 
       <div className="mt-2 flex items-center gap-3 text-xs text-muted">
         <span className="inline-flex items-center gap-2">
-          <span className="inline-block h-3 w-3 rounded-sm bg-gray-100 border border-gray-300" />
+          <span className="inline-block h-3 w-3 rounded-sm bg-[rgb(var(--fg))/0.08] border border-border" />
           Unavailable (past or booked)
         </span>
       </div>

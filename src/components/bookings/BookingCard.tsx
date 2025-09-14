@@ -32,7 +32,7 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
   return (
     <div
       className={`card h-full min-h-[112px] flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4 ${
-        isPast ? 'opacity-80' : ''
+        isPast ? 'bg-[rgb(var(--fg))/0.03] ring-1 ring-[rgb(var(--fg))/0.08]' : ''
       }`}
     >
       {venueId ? (

@@ -444,7 +444,7 @@ export default function HomePage() {
           />
           <span className="text-sm">Include venues without photo/map</span>
           {!includeNoImage && hiddenCount > 0 && (
-            <span className="text-xs opacity-70">({hiddenCount} hidden)</span>
+            <span className="text-xs text-muted">({hiddenCount} hidden)</span>
           )}
         </label>
       </form>

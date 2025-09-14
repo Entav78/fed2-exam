@@ -53,9 +53,7 @@ export default function MyVenuesList() {
           </li>
         ))}
         <li>
-          <li>
-            <NewVenueTile className="min-h-[112px]" />
-          </li>
+          <NewVenueTile className="min-h-[112px]" />
         </li>
       </ul>
 

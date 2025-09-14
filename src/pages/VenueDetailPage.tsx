@@ -247,7 +247,7 @@ export default function VenueDetailPage() {
             }
             className="ml-2 w-20 field" // was: "input-field"
           />
-          <span className="ml-2 opacity-70">/ max {venue.maxGuests}</span>
+          <span className="ml-2 text-muted">/ max {venue.maxGuests}</span>
         </label>
 
         <div className="ml-auto text-right">

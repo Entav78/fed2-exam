@@ -12,7 +12,7 @@ export default function RootError() {
           <span className="font-semibold">{error.status}</span> {error.statusText}
         </p>
         {error.data ? (
-          <pre className="mt-3 overflow-auto rounded bg-surface p-3 text-sm opacity-80">
+          <pre className="mt-3 overflow-auto rounded bg-surface p-3 text-muted">
             {typeof error.data === 'string' ? error.data : JSON.stringify(error.data, null, 2)}
           </pre>
         ) : null}
@@ -42,7 +42,7 @@ export default function RootError() {
       {import.meta.env.DEV && (error as Error)?.stack && (
         <details className="mt-4">
           <summary className="cursor-pointer text-sm text-muted">Stack trace (dev only)</summary>
-          <pre className="mt-2 overflow-auto rounded bg-surface p-3 text-xs opacity-80">
+          <pre className="mt-2 overflow-auto rounded bg-card p-3 text-xs text-muted">
             {(error as Error).stack}
           </pre>
         </details>

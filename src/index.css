@@ -66,4 +66,12 @@
   .btn-ghost {
     @apply rounded-md border border-border bg-transparent px-3 py-2 text-sm hover:bg-[rgb(var(--fg))/0.05];
   }
+
+  .text-muted {
+    color: rgb(var(--muted));
+  }
+
+  .text-header-subtle {
+    color: rgb(var(--header-fg) / 0.95);
+  }
 }
