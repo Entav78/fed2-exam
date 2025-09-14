@@ -37,7 +37,6 @@ export default function VenueCard({
     : { width: 640, height: 256, zoom: 13 };
 
   const { src, alt } = useGeocodedStaticMap(venue, 0, imgOpts);
-  const fetchPrio = (priority ? 'high' : 'auto') as 'high' | 'auto';
 
   if (isRow) {
     return (
@@ -47,9 +46,9 @@ export default function VenueCard({
           alt={alt}
           width={imgOpts.width}
           height={imgOpts.height}
-          className="thumb"
+          sizes="128px"
           loading={priority ? 'eager' : 'lazy'}
-          fetchPriority={fetchPrio}
+          fetchPriority={priority ? 'high' : 'auto'}
           decoding={priority ? 'sync' : 'async'}
           referrerPolicy="no-referrer"
           onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
@@ -95,12 +94,13 @@ export default function VenueCard({
       <img
         src={src}
         alt={alt}
-        className="h-40 w-full object-cover"
-        loading={priority ? 'eager' : 'lazy'}
-        fetchPriority={fetchPrio}
-        decoding="async"
         width={imgOpts.width}
         height={imgOpts.height}
+        className="h-40 w-full object-cover"
+        sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? ('high' as const) : 'auto'}
+        decoding="async"
         referrerPolicy="no-referrer"
         onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
       />
