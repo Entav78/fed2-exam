@@ -98,7 +98,7 @@ export default function VenueCard({
       />
 
       <div className="p-4">
-        <h3 className="text-lg font-semibold group-hover:underline">{venue.name}</h3>
+        <h2 className="text-lg font-semibold group-hover:underline">{venue.name}</h2>
         {city && <p className="text-sm text-muted">{city}</p>}
         <p className="text-sm text-muted">Max guests: {venue.maxGuests}</p>
         <p className="mt-2 font-bold">{nok.format(venue.price)} / night</p>

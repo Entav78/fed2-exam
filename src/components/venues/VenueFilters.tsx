@@ -23,6 +23,7 @@ type Props = {
   onClear?: () => void;
   countries?: string[]; // pass from HomePage
   cities?: string[]; // pass from HomePage (depends on country)
+  hasRatings?: boolean;
 };
 
 export default function VenueFilters({
@@ -31,6 +32,7 @@ export default function VenueFilters({
   onClear,
   countries = [],
   cities = [],
+  hasRatings = false,
 }: Props) {
   type TextKeys = 'q' | 'minPrice' | 'maxPrice' | 'country' | 'city';
   type BoolKeys = 'wifi' | 'parking' | 'breakfast' | 'pets';
@@ -91,12 +93,19 @@ export default function VenueFilters({
 
       {/* Sort (combined) */}
       <div className="flex gap-2">
-        <select className="field" value={sortKey} onChange={onSortKey}>
+        <label htmlFor="sortKey" className="sr-only">
+          Sort
+        </label>
+        <select id="sortKey" className="field" value={sortKey} onChange={onSortKey}>
           <option value="created:desc">Newest</option>
           <option value="price:asc">Price: Low → High</option>
           <option value="price:desc">Price: High → Low</option>
-          <option value="rating:desc">Rating: High → Low</option>
-          <option value="rating:asc">Rating: Low → High</option>
+          {hasRatings && (
+            <>
+              <option value="rating:desc">Rating: High → Low</option>
+              <option value="rating:asc">Rating: Low → High</option>
+            </>
+          )}
         </select>
       </div>
 
@@ -142,7 +151,15 @@ export default function VenueFilters({
 
       {/* Country & City */}
       <div className="grid grid-cols-2 gap-2 md:col-span-2">
-        <select className="field" value={value.country ?? ''} onChange={onCountryChange}>
+        <label htmlFor="country" className="sr-only">
+          Country
+        </label>
+        <select
+          id="country"
+          className="field"
+          value={value.country ?? ''}
+          onChange={onCountryChange}
+        >
           <option value="">All countries</option>
           {countries.map((c) => (
             <option key={c} value={c}>
@@ -151,7 +168,11 @@ export default function VenueFilters({
           ))}
         </select>
 
+        <label htmlFor="city" className="sr-only">
+          City
+        </label>
         <select
+          id="city"
           className="field"
           value={value.city ?? ''}
           onChange={onText('city')}

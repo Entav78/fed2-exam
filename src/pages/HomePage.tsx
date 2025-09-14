@@ -65,6 +65,18 @@ export default function HomePage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const hasRatings = useMemo(
+    () => allFetched.some((v) => Number.isFinite(v.rating) && (v.rating ?? 0) > 0),
+    [allFetched],
+  );
+
+  // If rating becomes unavailable, fall back to "Newest"
+  useEffect(() => {
+    if (filters.sort === 'rating' && !hasRatings) {
+      setFilters((f) => ({ ...f, sort: 'created', order: 'desc' }));
+    }
+  }, [hasRatings]); // eslint-disable-line
+
   const countries = useMemo(() => {
     const names = allFetched
       .map((v) => normalizeCountry(v.location?.country ?? null))
@@ -371,6 +383,7 @@ export default function HomePage() {
         }}
         countries={countries}
         cities={cities}
+        hasRatings={hasRatings}
       />
 
       {/* Availability form */}

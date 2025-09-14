@@ -114,16 +114,23 @@ export default function Header() {
 
       {/* Desktop "logged in as" row */}
       {isLoggedIn && displayName && (
-        <div className="container mt-1 hidden sm:flex items-center justify-end gap-3 text-sm opacity-80">
+        <div className="container mt-1 hidden sm:flex items-center justify-end gap-3 text-sm text-[rgb(var(--header-fg))]">
           <span>
             Logged in as <span className="font-semibold">{displayName}</span>
-            <span className="ml-2 opacity-70">({isManager ? 'Manager' : 'Customer'})</span>
+            <span className="ml-2 text-[rgb(var(--header-fg))/0.95]">
+              ({isManager ? 'Manager' : 'Customer'})
+            </span>
           </span>
 
-          {/* label is visible because compact is omitted */}
-          <ThemeSwitcher variant="header" className="ml-2" />
+          <div className="flex items-center gap-2">
+            <span className="text-[rgb(var(--header-fg))]">Theme</span>
+            <ThemeSwitcher variant="header" compact onChanged={() => setMenuOpen(false)} />
+          </div>
+
+          <LogoutButton className="underline" />
         </div>
       )}
+
       <div className="hidden sm:block">
         <div className="container h-px w-full bg-[rgb(var(--header-fg))/35]" />
         <div className="h-px bg-[rgb(var(--header-fg))/12]" />
@@ -206,28 +213,37 @@ export default function Header() {
             </li>
           )}
 
-          <hr className="my-4 border-[rgb(var(--header-fg))/20]" />
+          {/* separator must also be an <li> */}
+          <li
+            role="separator"
+            aria-hidden="true"
+            className="my-4 border-t border-[rgb(var(--header-fg))/20]"
+          />
 
-          {isLoggedIn ? (
-            <div className="space-y-3 text-sm">
-              <div className="opacity-90">
-                Logged in as <strong>{displayName}</strong>
-                {isManager && <span className="opacity-70"> (Manager)</span>}
+          <li>
+            {isLoggedIn ? (
+              <div className="space-y-3 text-sm text-[rgb(var(--header-fg))]">
+                <div>
+                  Logged in as <strong>{displayName}</strong>
+                  {isManager && (
+                    <span className="ml-2 text-[rgb(var(--header-fg))/0.95]">(Manager)</span>
+                  )}
+                </div>
+
+                <div>
+                  <span className="block mb-1">Theme</span>
+                  <ThemeSwitcher variant="header" compact onChanged={() => setMenuOpen(false)} />
+                </div>
+
+                <LogoutButton className="underline" />
               </div>
-
-              <div>
-                <span className="block mb-1 opacity-80">Theme</span>
+            ) : (
+              <div className="text-sm text-[rgb(var(--header-fg))]">
+                <span className="block mb-1">Theme</span>
                 <ThemeSwitcher variant="header" compact onChanged={() => setMenuOpen(false)} />
               </div>
-
-              <LogoutButton className="underline" />
-            </div>
-          ) : (
-            <div className="text-sm">
-              <span className="block mb-1 opacity-80">Theme</span>
-              <ThemeSwitcher variant="header" compact onChanged={() => setMenuOpen(false)} />
-            </div>
-          )}
+            )}
+          </li>
         </ul>
       </div>
     </header>
