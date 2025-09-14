@@ -456,9 +456,9 @@ export default function HomePage() {
       )}
 
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {visibleVenues.map((v) => (
+        {visibleVenues.map((v, i) => (
           <li key={v.id}>
-            <VenueCard venue={v} />
+            <VenueCard venue={v} priority={i === 0} />
           </li>
         ))}
       </ul>

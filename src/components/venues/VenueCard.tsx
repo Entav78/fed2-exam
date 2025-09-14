@@ -11,6 +11,7 @@ type Props = {
   showManage?: boolean;
   manageHref?: string;
   className?: string;
+  priority?: boolean;
 };
 
 const nok = new Intl.NumberFormat('no-NO', {
@@ -26,13 +27,14 @@ export default function VenueCard({
   showManage = false,
   manageHref,
   className = '',
+  priority = false,
 }: Props) {
   const isRow = layout === 'row';
   const city = venue.location?.city;
 
   const imgOpts = isRow
     ? { width: 128, height: 128, zoom: 14 }
-    : { width: 800, height: 320, zoom: 13 };
+    : { width: 640, height: 256, zoom: 13 };
 
   const { src, alt } = useGeocodedStaticMap(venue, 0, imgOpts);
 
@@ -42,9 +44,12 @@ export default function VenueCard({
         <img
           src={src}
           alt={alt}
+          width={imgOpts.width}
+          height={imgOpts.height}
           className="thumb"
-          loading="lazy"
-          decoding="async"
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'auto'}
+          decoding={priority ? 'sync' : 'async'}
           referrerPolicy="no-referrer"
           onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
         />
@@ -90,8 +95,11 @@ export default function VenueCard({
       <img
         src={src}
         alt={alt}
+        width={imgOpts.width}
+        height={imgOpts.height}
         className="h-40 w-full object-cover"
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : 'auto'}
         decoding="async"
         referrerPolicy="no-referrer"
         onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
