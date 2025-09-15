@@ -8,7 +8,7 @@ import { makeSrcSet } from '@/utils/img';
 import { optimizeRemoteImage } from '@/utils/optimizeRemoteImage';
 
 const COVER_W = 1200;
-const COVER_H = 675;
+const COVER_H = 400;
 const AVATAR_W = 96;
 const AVATAR_H = 96;
 
@@ -146,26 +146,29 @@ export default function ProfileMediaEditor() {
       <h2 className="mb-3 text-lg font-semibold">Profile images</h2>
 
       {/* Always-visible banner preview */}
-      <div className="overflow-hidden rounded border border-border">
-        {form.bannerUrl ? (
-          <img
-            src={optimizeRemoteImage(form.bannerUrl, { width: COVER_W, height: COVER_H })}
-            srcSet={makeSrcSet(form.bannerUrl, [480, 640, 768, 960, 1200], (w) =>
-              Math.round(w * (COVER_H / COVER_W)),
-            )}
-            sizes="100vw"
-            alt={form.bannerAlt || 'Banner preview'}
-            width={COVER_W}
-            height={COVER_H}
-            className="block h-full w-full object-cover"
-            /* make banner the LCP */
-            fetchPriority="high"
-            loading="eager"
-            decoding="sync"
-          />
-        ) : (
-          <div className="grid h-full w-full place-items-center text-sm text-muted">No banner</div>
-        )}
+      <div className="w-full overflow-hidden rounded border border-border">
+        <div className="relative aspect-[3/1]">
+          {form.bannerUrl ? (
+            <img
+              src={optimizeRemoteImage(form.bannerUrl, { width: COVER_W, height: COVER_H })}
+              srcSet={makeSrcSet(form.bannerUrl, [480, 640, 768, 960, 1200], (w) =>
+                Math.round(w * (COVER_H / COVER_W)),
+              )}
+              sizes="(min-width:1024px) 1024px, 100vw" // tuned to your max-w-5xl layout
+              alt={form.bannerAlt || 'Banner preview'}
+              width={COVER_W}
+              height={COVER_H}
+              className="absolute inset-0 h-full w-full object-cover" // fills + crops
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+            />
+          ) : (
+            <div className="grid h-full w-full place-items-center text-sm text-muted">
+              No banner
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Collapsible edit controls for banner */}
@@ -207,7 +210,7 @@ export default function ProfileMediaEditor() {
               width={AVATAR_W}
               height={AVATAR_H}
               className="h-full w-full object-cover"
-              loading="eager"
+              loading="lazy"
               decoding="async"
             />
           ) : (
