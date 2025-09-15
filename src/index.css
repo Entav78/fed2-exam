@@ -54,9 +54,9 @@
   }
 
   /* new: consistent thumbnails everywhere */
-  .thumb {
+  /* .thumb {
     @apply h-16 w-16 rounded object-cover;
-  }
+  }*/
 
   .field {
     @apply w-full h-10 min-w-0 rounded-md border border-border bg-card text-fg px-3 text-sm leading-5

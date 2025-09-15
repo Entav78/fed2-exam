@@ -146,19 +146,22 @@ export default function ProfileMediaEditor() {
       <h2 className="mb-3 text-lg font-semibold">Profile images</h2>
 
       {/* Always-visible banner preview */}
-      <div className="w-full overflow-hidden rounded border border-border">
-        <div className="relative aspect-[3/1]">
+      <div
+        className="overflow-hidden rounded border border-border"
+        style={{ aspectRatio: '3 / 1' }} // <- inline, prevents CSS-timing CLS
+      >
+        <div className="relative h-full w-full">
           {form.bannerUrl ? (
             <img
               src={optimizeRemoteImage(form.bannerUrl, { width: COVER_W, height: COVER_H })}
               srcSet={makeSrcSet(form.bannerUrl, [480, 640, 768, 960, 1200], (w) =>
                 Math.round(w * (COVER_H / COVER_W)),
               )}
-              sizes="(min-width:1024px) 1024px, 100vw" // tuned to your max-w-5xl layout
+              sizes="(min-width:1024px) 1024px, 100vw"
               alt={form.bannerAlt || 'Banner preview'}
               width={COVER_W}
               height={COVER_H}
-              className="absolute inset-0 h-full w-full object-cover" // fills + crops
+              className="absolute inset-0 h-full w-full object-cover"
               loading="eager"
               fetchPriority="high"
               decoding="async"

@@ -27,18 +27,56 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!bannerUrl) return;
 
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = 'image';
-    link.href = bannerUrl;
-    link.setAttribute('imagesizes', '(min-width:1024px) 1024px, 100vw');
-    link.crossOrigin = 'anonymous';
+    // 1) Preconnect to the banner's origin (only if we haven't already)
+    let createdPreconnect = false;
+    try {
+      const origin = new URL(bannerUrl).origin;
+      const existing = document.querySelector<HTMLLinkElement>(
+        `link[rel="preconnect"][href="${origin}"]`,
+      );
+      if (!existing) {
+        const pc = document.createElement('link');
+        pc.rel = 'preconnect';
+        pc.href = origin;
+        pc.crossOrigin = 'anonymous';
+        document.head.appendChild(pc);
+        createdPreconnect = true;
+      }
+    } catch {
+      // ignore bad URLs
+    }
 
-    document.head.appendChild(link);
+    // 2) Preload the banner image itself (matches your <img sizes>)
+    const pl = document.createElement('link');
+    pl.rel = 'preload';
+    pl.as = 'image';
+    pl.href = bannerUrl;
+    pl.setAttribute('imagesizes', '(min-width:1024px) 1024px, 100vw');
+    pl.crossOrigin = 'anonymous';
+    document.head.appendChild(pl);
+
     return () => {
-      document.head.removeChild(link);
+      // remove the preload tag we created
+      if (pl.parentNode) pl.parentNode.removeChild(pl);
+      // only remove preconnect if we created it here
+      if (createdPreconnect) {
+        const origin = (() => {
+          try {
+            return new URL(bannerUrl).origin;
+          } catch {
+            return null;
+          }
+        })();
+        if (origin) {
+          const link = document.querySelector<HTMLLinkElement>(
+            `link[rel="preconnect"][href="${origin}"]`,
+          );
+          if (link?.parentNode) link.parentNode.removeChild(link);
+        }
+      }
     };
   }, [bannerUrl]);
+
   // ----------------------------------------------
 
   // Early return AFTER hooks to keep hook order stable

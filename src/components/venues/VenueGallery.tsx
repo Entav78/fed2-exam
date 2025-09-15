@@ -51,7 +51,10 @@ export default function VenueGallery({ venue, priority = false }: Props) {
 
   return (
     <div>
-      <div className="aspect-[16/9] w-full overflow-hidden rounded-lg bg-border-light">
+      <div
+        className="w-full overflow-hidden rounded-lg bg-border-light"
+        style={{ aspectRatio: '16 / 9' }} // <-- reserves height immediately
+      >
         <img
           src={heroSrc}
           alt={current.alt}
