@@ -22,7 +22,7 @@ export function optimizeRemoteImage(url: string, opts: Opts = {}): string {
     ),
   );
   const targetW = Math.max(1, Math.round((opts.width ?? 640) * dpr));
-  const q = Math.max(40, Math.min(85, Math.round(opts.quality ?? 70)));
+  const q = Math.max(40, Math.min(85, Math.round(opts.quality ?? 60)));
 
   // --- DuckDuckGo image proxy: unwrap and re-run ---
   if (host === 'external-content.duckduckgo.com') {

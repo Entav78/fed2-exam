@@ -71,7 +71,7 @@ export type FetchVenuesParams = {
   page?: number;
   limit?: number;
   owner?: boolean;
-  bookings?: boolean; // <— ask for bookings so we can filter availability client-side
+  bookings?: boolean;
 };
 
 export async function fetchVenues(params: FetchVenuesParams = {}): Promise<Venue[]> {

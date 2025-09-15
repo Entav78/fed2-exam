@@ -35,7 +35,42 @@ export default function MyVenuesList() {
   }, [user?.name]);
 
   if (!user?.name) return null;
-  if (loading) return <p className="text-sm text-muted">Loading your venues…</p>;
+  if (loading) {
+    return (
+      <>
+        <ul className="grid gap-4 xl:grid-cols-2 auto-rows-fr list-none p-0 m-0">
+          {[0, 1, 2].map((i) => (
+            <li key={i}>
+              <div className="card flex items-center gap-4 p-4">
+                <div className="h-32 w-32 rounded border border-border bg-muted shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-1/3 bg-muted rounded" />
+                  <div className="h-3 w-1/4 bg-muted rounded" />
+                  <div className="h-3 w-1/5 bg-muted rounded" />
+                </div>
+                <div className="ml-auto flex gap-2">
+                  <div className="h-8 w-16 bg-muted rounded border border-border" />
+                  <div className="h-8 w-20 bg-muted rounded border border-border" />
+                </div>
+              </div>
+            </li>
+          ))}
+          {/* matches the NewVenueTile slot */}
+          <li>
+            <div className="card flex items-center gap-4 p-4">
+              <div className="h-32 w-32 rounded border border-border bg-muted shrink-0" />
+              <div className="flex-1 h-4 bg-muted rounded" />
+            </div>
+          </li>
+        </ul>
+        {/* matches the "Show all" button row so the height doesn't jump */}
+        <div className="mt-3">
+          <div className="h-9 w-40 rounded border border-border bg-muted" />
+        </div>
+      </>
+    );
+  }
+
   if (error) return <p className="text-danger text-sm">Error: {error}</p>;
   if (!rows.length)
     return <p className="text-sm text-muted">You haven’t created any venues yet.</p>;
