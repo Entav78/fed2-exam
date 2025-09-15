@@ -1,10 +1,16 @@
-// src/components/profile/ProfileMediaEditor.tsx
 import { type ReactNode, useState } from 'react';
 import toast from 'react-hot-toast';
 
 import { Button } from '@/components/ui/Button';
 import { updateProfileMedia, type UpdateProfileMediaBody } from '@/lib/api/profiles';
 import { useAuthStore } from '@/store/authStore';
+import { makeSrcSet } from '@/utils/img';
+import { optimizeRemoteImage } from '@/utils/optimizeRemoteImage';
+
+const COVER_W = 1200;
+const COVER_H = 675;
+const AVATAR_W = 96;
+const AVATAR_H = 96;
 
 type Form = {
   avatarUrl: string;
@@ -143,14 +149,22 @@ export default function ProfileMediaEditor() {
       <div className="overflow-hidden rounded border border-border">
         {form.bannerUrl ? (
           <img
-            src={form.bannerUrl}
+            src={optimizeRemoteImage(form.bannerUrl, { width: COVER_W, height: COVER_H })}
+            srcSet={makeSrcSet(form.bannerUrl, [480, 640, 768, 960, 1200], (w) =>
+              Math.round(w * (COVER_H / COVER_W)),
+            )}
+            sizes="100vw"
             alt={form.bannerAlt || 'Banner preview'}
-            className="block h-40 w-full object-cover sm:h-56 md:h-64"
+            width={COVER_W}
+            height={COVER_H}
+            className="block h-full w-full object-cover"
+            /* make banner the LCP */
+            fetchPriority="high"
+            loading="eager"
+            decoding="sync"
           />
         ) : (
-          <div className="grid h-32 w-full place-items-center text-sm text-muted sm:h-40 md:h-48">
-            No banner
-          </div>
+          <div className="grid h-full w-full place-items-center text-sm text-muted">No banner</div>
         )}
       </div>
 
@@ -188,9 +202,13 @@ export default function ProfileMediaEditor() {
         <div className="h-24 w-24 overflow-hidden rounded-full border border-border">
           {form.avatarUrl ? (
             <img
-              src={form.avatarUrl}
+              src={optimizeRemoteImage(form.avatarUrl, { width: AVATAR_W, height: AVATAR_H })}
               alt={form.avatarAlt || 'Avatar preview'}
+              width={AVATAR_W}
+              height={AVATAR_H}
               className="h-full w-full object-cover"
+              loading="eager"
+              decoding="async"
             />
           ) : (
             <div className="grid h-full w-full place-items-center text-xs text-muted">

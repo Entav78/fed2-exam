@@ -1,4 +1,6 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense } from 'react';
+
+import { useInViewOnce } from '@/utils/useInViewOnce';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -12,30 +14,6 @@ type Props = {
   zoom?: number;
   className?: string;
 };
-
-// Load once when near viewport
-function useInViewOnce(rootMargin = '800px') {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [shown, setShown] = useState(false);
-
-  useEffect(() => {
-    if (!ref.current || shown) return;
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          setShown(true);
-          io.disconnect();
-        }
-      },
-      { root: null, rootMargin, threshold: 0 },
-    );
-
-    io.observe(ref.current);
-    return () => io.disconnect();
-  }, [shown, rootMargin]);
-
-  return { ref, shown };
-}
 
 export default function VenueMap(props: Props) {
   const height = props.height ?? 300;

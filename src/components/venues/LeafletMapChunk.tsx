@@ -1,4 +1,3 @@
-// src/components/venues/LeafletMapChunk.tsx
 import { useEffect } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
