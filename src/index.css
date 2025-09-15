@@ -45,6 +45,14 @@
     @apply w-full rounded-md border border-border bg-card text-fg px-3 py-2;
   }
 
+  /* Optional: make card images reserve space and fade in nicely */
+  .venue-img {
+    display: block;
+    width: 100%;
+    object-fit: cover;
+    background: color-mix(in srgb, rgb(var(--fg)) 6%, transparent);
+  }
+
   /* new: consistent thumbnails everywhere */
   .thumb {
     @apply h-16 w-16 rounded object-cover;

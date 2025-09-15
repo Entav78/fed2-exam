@@ -27,7 +27,6 @@ export default function VenueCard({
   showManage = false,
   manageHref,
   className = '',
-  priority = false,
 }: Props) {
   const isRow = layout === 'row';
   const city = venue.location?.city;
@@ -46,10 +45,10 @@ export default function VenueCard({
           alt={alt}
           width={imgOpts.width}
           height={imgOpts.height}
-          sizes="128px"
-          loading={priority ? 'eager' : 'lazy'}
-          fetchPriority={priority ? 'high' : 'auto'}
-          decoding={priority ? 'sync' : 'async'}
+          className="thumb"
+          loading="lazy"
+          decoding="async"
+          fetchPriority="auto"
           referrerPolicy="no-referrer"
           onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
         />
@@ -94,13 +93,12 @@ export default function VenueCard({
       <img
         src={src}
         alt={alt}
-        width={imgOpts.width}
-        height={imgOpts.height}
+        width={imgOpts.width} // 640
+        height={imgOpts.height} // 256
         className="h-40 w-full object-cover"
-        sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
-        loading={priority ? 'eager' : 'lazy'}
-        fetchPriority={priority ? ('high' as const) : 'auto'}
+        loading="lazy"
         decoding="async"
+        fetchPriority="auto"
         referrerPolicy="no-referrer"
         onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
       />
