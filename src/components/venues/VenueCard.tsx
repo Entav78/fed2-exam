@@ -50,7 +50,6 @@ export default function VenueCard({
           decoding={priority ? 'sync' : 'async'}
           width={imgOpts.width}
           height={imgOpts.height}
-          // Tell the browser how wide this image will render at each breakpoint:
           sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
           referrerPolicy="no-referrer"
           onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
@@ -98,6 +97,7 @@ export default function VenueCard({
         alt={alt}
         width={imgOpts.width} // 640
         height={imgOpts.height} // 256
+        sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
         className="h-40 w-full object-cover"
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? ('high' as const) : 'auto'}

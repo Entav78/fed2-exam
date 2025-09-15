@@ -1,52 +1,55 @@
-// src/main.tsx
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 
 import App from '@/App';
-import BookingsPage from '@/pages/BookingsPage';
-import HomePage from '@/pages/HomePage';
-import LoginPage from '@/pages/LoginPage';
-import ManageVenuePage from '@/pages/ManageVenuePage';
-import NotFoundPage from '@/pages/NotFoundPage';
-import ProfilePage from '@/pages/ProfilePage';
-import RegisterPage from '@/pages/RegisterPage';
 import RootError from '@/pages/RootError';
-import VenueDetailPage from '@/pages/VenueDetailPage';
 import { RequireAuth, RequireManager } from '@/routes/guards';
 
-import 'leaflet/dist/leaflet.css';
 import './index.css';
+
+// ---- lazy page chunks ----
+const HomePage = lazy(() => import('@/pages/HomePage'));
+const VenueDetailPage = lazy(() => import('@/pages/VenueDetailPage'));
+const LoginPage = lazy(() => import('@/pages/LoginPage'));
+const RegisterPage = lazy(() => import('@/pages/RegisterPage'));
+const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
+const BookingsPage = lazy(() => import('@/pages/BookingsPage'));
+const ManageVenuePage = lazy(() => import('@/pages/ManageVenuePage'));
+const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
+
+// small shared fallback
+const Fallback = <div className="p-4 text-sm text-muted">Loading…</div>;
+const withSuspense = (el: React.ReactElement) => <Suspense fallback={Fallback}>{el}</Suspense>;
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <App />, // keeps Header/Footer via <Outlet/>
+    element: <App />,
     errorElement: <RootError />,
     children: [
-      { index: true, element: <HomePage /> },
-      { path: 'venues/:id', element: <VenueDetailPage /> },
-      { path: 'login', element: <LoginPage /> },
-      { path: 'register', element: <RegisterPage /> },
+      { index: true, element: withSuspense(<HomePage />) },
+      { path: 'venues/:id', element: withSuspense(<VenueDetailPage />) },
+      { path: 'login', element: withSuspense(<LoginPage />) },
+      { path: 'register', element: withSuspense(<RegisterPage />) },
 
-      // protected routes (still under App layout)
       {
         element: <RequireAuth />,
         children: [
-          { path: 'profile', element: <ProfilePage /> },
-          { path: 'bookings', element: <BookingsPage /> },
+          { path: 'profile', element: withSuspense(<ProfilePage />) },
+          { path: 'bookings', element: withSuspense(<BookingsPage />) },
         ],
       },
       {
-        element: <RequireManager />, // managers only
+        element: <RequireManager />,
         children: [
-          { path: 'manage', element: <ManageVenuePage /> },
-          { path: 'manage/:id', element: <ManageVenuePage /> },
+          { path: 'manage', element: withSuspense(<ManageVenuePage />) },
+          { path: 'manage/:id', element: withSuspense(<ManageVenuePage />) },
           { path: 'venues/new', element: <Navigate to="/manage" replace /> },
         ],
       },
 
-      { path: '*', element: <NotFoundPage /> },
+      { path: '*', element: withSuspense(<NotFoundPage />) },
     ],
   },
 ]);

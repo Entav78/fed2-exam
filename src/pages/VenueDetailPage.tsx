@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import toast from 'react-hot-toast';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/Button';
 import AmenitiesList from '@/components/venues/AmenitiesList';
 import BookingCalendar from '@/components/venues/BookingCalendar';
 import VenueGallery from '@/components/venues/VenueGallery';
-import VenueMap from '@/components/venues/VenueMap';
 import { createBooking } from '@/lib/api/bookings';
 import type { BookingLite } from '@/lib/api/venues';
 import { getVenueById, type Venue } from '@/lib/api/venues';
@@ -17,12 +16,36 @@ import { dateOnly } from '@/utils/date';
 import { isLikelyValidCoords } from '@/utils/geo';
 import { formatLocation } from '@/utils/location';
 
+const VenueMap = lazy(() => import('@/components/venues/VenueMap'));
+
 const nok = new Intl.NumberFormat('no-NO', {
   style: 'currency',
   currency: 'NOK',
   minimumFractionDigits: 0,
   maximumFractionDigits: 0,
 });
+
+function useInViewOnce(rootMargin = '800px') {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    if (!ref.current || shown) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setShown(true);
+          io.disconnect();
+        }
+      },
+      { root: null, rootMargin, threshold: 0 },
+    );
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, [shown, rootMargin]);
+
+  return { ref, shown };
+}
 
 export default function VenueDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -39,6 +62,7 @@ export default function VenueDetailPage() {
   const [guests, setGuests] = useState(1);
   const [bookingBusy, setBookingBusy] = useState(false);
   const location = useLocation();
+  const { ref: mapSlotRef, shown: mapInView } = useInViewOnce('600px');
 
   const missingDates = !range?.from || !range?.to;
   const ctaDisabled = bookingBusy || missingDates;
@@ -287,11 +311,17 @@ export default function VenueDetailPage() {
         <h2 className="text-lg font-semibold mb-2">Location</h2>
         <p className="text-muted mb-3">{locationText}</p>
 
-        {coords ? (
-          <VenueMap lat={coords.lat} lng={coords.lng} name={venue.name} height={320} />
-        ) : (
-          <p className="text-sm text-muted">No valid map location for this venue.</p>
-        )}
+        <div ref={mapSlotRef}>
+          <Suspense
+            fallback={<div className="h-[320px] rounded-lg border border-border bg-muted" />}
+          >
+            {mapInView && coords ? (
+              <VenueMap lat={coords.lat} lng={coords.lng} name={venue.name} height={320} />
+            ) : !coords ? (
+              <p className="text-sm text-muted">No valid map location for this venue.</p>
+            ) : null}
+          </Suspense>
+        </div>
 
         {mapsHref && locationText && locationText.trim().length > 2 && (
           <a

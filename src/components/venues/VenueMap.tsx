@@ -1,21 +1,8 @@
-import { useEffect } from 'react';
-import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
-import * as L from 'leaflet';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 
-// Simple inline SVG pin (brown to match your header/brand vibe)
-const pinSvg = encodeURIComponent(`
-<svg width="28" height="42" viewBox="0 0 28 42" xmlns="http://www.w3.org/2000/svg">
-  <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 28 14 28s14-17.5 14-28C28 6.27 21.73 0 14 0z" fill="#53423C"/>
-  <circle cx="14" cy="14" r="5" fill="#fff"/>
-</svg>
-`);
+import 'leaflet/dist/leaflet.css';
 
-const pinIcon = L.icon({
-  iconUrl: `data:image/svg+xml;charset=UTF-8,${pinSvg}`,
-  iconSize: [28, 42],
-  iconAnchor: [14, 42], // bottom-center of the icon
-  popupAnchor: [0, -36],
-});
+const LeafletMapChunk = lazy(() => import('./LeafletMapChunk'));
 
 type Props = {
   lat: number;
@@ -23,43 +10,54 @@ type Props = {
   name?: string;
   height?: number; // px
   zoom?: number;
+  className?: string;
 };
 
-function ResizeOnMount() {
-  const map = useMap();
+// Load once when near viewport
+function useInViewOnce(rootMargin = '800px') {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [shown, setShown] = useState(false);
+
   useEffect(() => {
-    const id = setTimeout(() => map.invalidateSize(), 0); // first paint
-    const onResize = () => map.invalidateSize(); // window resizes
-    window.addEventListener('resize', onResize);
-    return () => {
-      clearTimeout(id);
-      window.removeEventListener('resize', onResize);
-    };
-  }, [map]);
-  return null;
+    if (!ref.current || shown) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setShown(true);
+          io.disconnect();
+        }
+      },
+      { root: null, rootMargin, threshold: 0 },
+    );
+
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, [shown, rootMargin]);
+
+  return { ref, shown };
 }
 
-export default function VenueMap({ lat, lng, name = 'Venue', height = 300, zoom = 13 }: Props) {
-  const position: [number, number] = [lat, lng];
+export default function VenueMap(props: Props) {
+  const height = props.height ?? 300;
+  const { ref, shown } = useInViewOnce('800px');
+
+  const skeleton = (
+    <div
+      className={`w-full overflow-hidden rounded-lg border border-border bg-[rgb(var(--fg))/0.06] animate-pulse ${props.className ?? ''}`}
+      style={{ height }}
+      aria-hidden
+    />
+  );
 
   return (
-    <div className="w-full overflow-hidden rounded-lg border border-border" style={{ height }}>
-      <MapContainer
-        key={`${lat},${lng}`}
-        center={position}
-        zoom={zoom}
-        scrollWheelZoom={false}
-        className="h-full w-full"
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        />
-        <Marker position={position} icon={pinIcon}>
-          <Popup>{name}</Popup>
-        </Marker>
-        <ResizeOnMount />
-      </MapContainer>
+    <div ref={ref}>
+      {shown ? (
+        <Suspense fallback={skeleton}>
+          <LeafletMapChunk {...props} height={height} />
+        </Suspense>
+      ) : (
+        skeleton
+      )}
     </div>
   );
 }
