@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 
 import ProfileMediaEditor from '@/components/profile/ProfileMediaEditor';
 import { useAuthStore } from '@/store/authStore';
@@ -21,6 +21,27 @@ function LazySection({ children }: { children: React.ReactNode }) {
 export default function ProfilePage() {
   const user = useAuthStore((s) => s.user);
   const isManager = useAuthStore((s) => s.isManager());
+  const bannerUrl = useAuthStore((s) => s.user?.banner?.url);
+
+  // ---- Preload the LCP banner on this route ----
+  useEffect(() => {
+    if (!bannerUrl) return;
+
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = bannerUrl;
+    link.setAttribute('imagesizes', '(min-width:1024px) 1024px, 100vw');
+    link.crossOrigin = 'anonymous';
+
+    document.head.appendChild(link);
+    return () => {
+      document.head.removeChild(link);
+    };
+  }, [bannerUrl]);
+  // ----------------------------------------------
+
+  // Early return AFTER hooks to keep hook order stable
   if (!user) return null;
 
   return (

@@ -61,20 +61,22 @@ export default function VenueCard({
   if (isRow) {
     return (
       <div className={`card min-h-[112px] flex items-center gap-4 ${className ?? ''}`}>
-        <img
-          src={srcOptimized}
-          alt={alt}
-          width={imgOpts.width}
-          height={imgOpts.height}
-          className="thumb"
-          loading={priority ? 'eager' : 'lazy'}
-          fetchPriority={priority ? ('high' as const) : 'auto'}
-          decoding={priority ? 'sync' : 'async'}
-          sizes={sizes}
-          {...(srcSet ? { srcSet } : {})}
-          referrerPolicy="no-referrer"
-          onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
-        />
+        <div className="h-32 w-32 overflow-hidden rounded border border-border shrink-0">
+          <img
+            src={srcOptimized}
+            alt={alt}
+            width={imgOpts.width} // 128
+            height={imgOpts.height} // 128
+            className="h-full w-full object-cover"
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? ('high' as const) : 'auto'}
+            decoding={priority ? 'sync' : 'async'}
+            sizes={sizes}
+            {...(srcSet ? { srcSet } : {})}
+            referrerPolicy="no-referrer"
+            onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
+          />
+        </div>
 
         <div className="min-w-0 flex-1">
           <p className="line-clamp-1 font-semibold leading-tight">{venue.name}</p>
@@ -119,7 +121,7 @@ export default function VenueCard({
         width={imgOpts.width}
         height={imgOpts.height}
         className="h-40 w-full object-cover"
-        sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
+        sizes={sizes}
         {...(srcSet ? { srcSet } : {})}
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? ('high' as const) : 'auto'}

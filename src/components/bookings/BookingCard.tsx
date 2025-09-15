@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
 import type { Booking } from '@/lib/api/bookings';
+import { makeSrcSet } from '@/utils/img';
+import { optimizeRemoteImage } from '@/utils/optimizeRemoteImage';
 import { getVenueImage, handleImgErrorToPlaceholder } from '@/utils/venueImage';
 
 const THUMB_W = 96;
@@ -48,7 +50,9 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
         >
           <div className="h-16 w-24 overflow-hidden rounded border border-border shrink-0">
             <img
-              src={src}
+              src={optimizeRemoteImage(src, { width: THUMB_W, height: THUMB_H })}
+              srcSet={makeSrcSet(src, [96, 128, 160], (w) => Math.round(w * (THUMB_H / THUMB_W)))}
+              sizes="96px"
               alt={alt}
               width={THUMB_W}
               height={THUMB_H}
