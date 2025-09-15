@@ -53,8 +53,8 @@ export default function VenueCard({
   const srcSet = isCdnPhoto ? makeSrcSet(src, widths, (w) => Math.round(w * ratio)) : undefined;
 
   const srcOptimized = optimizeRemoteImage(src, {
-    width: imgOpts.width, // 640 in grid, 128 in row
-    height: imgOpts.height, // 256 in grid, 128 in row
+    width: imgOpts.width,
+    height: imgOpts.height,
     // dpr & quality default sensibly; you can pass them explicitly if you want
   });
 
@@ -62,12 +62,11 @@ export default function VenueCard({
     return (
       <div className={`card min-h-[112px] flex items-center gap-4 ${className ?? ''}`}>
         <img
-          src={src}
+          src={srcOptimized}
           alt={alt}
           width={imgOpts.width}
           height={imgOpts.height}
-          className={isRow ? 'thumb' : 'h-40 w-full object-cover'}
-          // LCP hint: only the *first* card gets high priority
+          className="thumb"
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? ('high' as const) : 'auto'}
           decoding={priority ? 'sync' : 'async'}
@@ -117,10 +116,11 @@ export default function VenueCard({
       <img
         src={srcOptimized}
         alt={alt}
-        width={imgOpts.width} // 640
-        height={imgOpts.height} // 256
-        sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
+        width={imgOpts.width}
+        height={imgOpts.height}
         className="h-40 w-full object-cover"
+        sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
+        {...(srcSet ? { srcSet } : {})}
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? ('high' as const) : 'auto'}
         decoding={priority ? 'sync' : 'async'}
