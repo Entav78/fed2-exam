@@ -53,11 +53,6 @@
     background: color-mix(in srgb, rgb(var(--fg)) 6%, transparent);
   }
 
-  /* new: consistent thumbnails everywhere */
-  /* .thumb {
-    @apply h-16 w-16 rounded object-cover;
-  }*/
-
   .field {
     @apply w-full h-10 min-w-0 rounded-md border border-border bg-card text-fg px-3 text-sm leading-5
            focus:outline-none focus:ring-2 focus:ring-[rgb(var(--fg))/0.1] focus:border-[rgb(var(--fg))/20];

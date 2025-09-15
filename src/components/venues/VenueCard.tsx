@@ -7,6 +7,9 @@ import { makeSrcSet } from '@/utils/img';
 import { optimizeRemoteImage } from '@/utils/optimizeRemoteImage';
 import { handleImgErrorToMapThenPlaceholder } from '@/utils/venueImage';
 
+const ROW_W = 96;
+const ROW_H = 64;
+
 type Props = {
   venue: Venue;
   layout?: 'grid' | 'row';
@@ -61,20 +64,24 @@ export default function VenueCard({
   if (isRow) {
     return (
       <div className={`card min-h-[112px] flex items-center gap-4 ${className ?? ''}`}>
-        <div className="h-32 w-32 overflow-hidden rounded border border-border shrink-0">
+        <div className="h-16 w-24 overflow-hidden rounded border border-border shrink-0">
           <img
             src={srcOptimized}
             alt={alt}
-            width={imgOpts.width} // 128
-            height={imgOpts.height} // 128
+            width={ROW_W}
+            height={ROW_H}
             className="h-full w-full object-cover"
             loading={priority ? 'eager' : 'lazy'}
             fetchPriority={priority ? ('high' as const) : 'auto'}
             decoding={priority ? 'sync' : 'async'}
-            sizes={sizes}
+            sizes="96px"
             {...(srcSet ? { srcSet } : {})}
             referrerPolicy="no-referrer"
-            onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
+            onError={handleImgErrorToMapThenPlaceholder(venue, {
+              width: ROW_W,
+              height: ROW_H,
+              zoom: 14,
+            })}
           />
         </div>
 

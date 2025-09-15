@@ -32,8 +32,8 @@ function VenuesSkeleton() {
     <ul className="grid gap-4 xl:grid-cols-2 auto-rows-fr list-none p-0 m-0">
       {[0, 1, 2].map((i) => (
         <li key={i}>
-          <div className="card min-h-[128px] flex items-center gap-4">
-            <div className="h-32 w-32 rounded border border-border bg-muted shrink-0" />
+          <div className="card min-h-[112px] flex items-center gap-4 p-4">
+            <div className="h-16 w-24 rounded border border-border bg-muted shrink-0" />
             <div className="flex-1 space-y-2">
               <div className="h-4 w-1/3 bg-muted rounded" />
               <div className="h-3 w-1/4 bg-muted rounded" />
