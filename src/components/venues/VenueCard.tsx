@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { useGeocodedStaticMap } from '@/hooks/useGeocodedStaticMap';
 import type { Venue } from '@/lib/api/venues';
+import { optimizeRemoteImage } from '@/utils/optimizeRemoteImage';
 import { handleImgErrorToMapThenPlaceholder } from '@/utils/venueImage';
 
 type Props = {
@@ -38,11 +39,17 @@ export default function VenueCard({
 
   const { src, alt } = useGeocodedStaticMap(venue, 0, imgOpts);
 
+  const srcOptimized = optimizeRemoteImage(src, {
+    width: imgOpts.width, // 640 in grid, 128 in row
+    height: imgOpts.height, // 256 in grid, 128 in row
+    // dpr & quality default sensibly; you can pass them explicitly if you want
+  });
+
   if (isRow) {
     return (
       <div className={`card min-h-[112px] flex items-center gap-4 ${className ?? ''}`}>
         <img
-          src={src}
+          src={srcOptimized}
           alt={alt}
           className={isRow ? 'thumb' : 'h-40 w-full object-cover'}
           loading={priority ? 'eager' : 'lazy'}
@@ -93,7 +100,7 @@ export default function VenueCard({
                   group ${className}`}
     >
       <img
-        src={src}
+        src={srcOptimized}
         alt={alt}
         width={imgOpts.width} // 640
         height={imgOpts.height} // 256
