@@ -2,19 +2,51 @@ import { lazy, Suspense, useEffect } from 'react';
 
 import ProfileMediaEditor from '@/components/profile/ProfileMediaEditor';
 import { useAuthStore } from '@/store/authStore';
-import { useInViewOnce } from '@/utils/useInViewOnce';
+//import { useInViewOnce } from '@/utils/useInViewOnce';
 
 const MyBookingsList = lazy(() => import('@/components/profile/MyBookingsList'));
 const MyVenuesList = lazy(() => import('@/components/profile/MyVenuesList'));
 
-function LazySection({ children }: { children: React.ReactNode }) {
-  const { ref, shown } = useInViewOnce('600px');
+function BookingsSkeleton() {
   return (
-    <div ref={ref}>
-      <Suspense fallback={<div className="h-40 rounded border border-border bg-muted" />}>
-        {shown ? children : null}
-      </Suspense>
-    </div>
+    <ul className="grid gap-4 xl:grid-cols-2 auto-rows-fr">
+      <li>
+        <div className="card min-h-[112px] flex items-center gap-4">
+          <div className="h-16 w-24 rounded border border-border bg-muted shrink-0" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-1/3 bg-muted rounded" />
+            <div className="h-3 w-1/4 bg-muted rounded" />
+          </div>
+          <div className="ml-auto flex gap-2">
+            <div className="h-8 w-24 bg-muted rounded border border-border" />
+            <div className="h-8 w-16 bg-muted rounded border border-border" />
+          </div>
+        </div>
+      </li>
+    </ul>
+  );
+}
+
+function VenuesSkeleton() {
+  return (
+    <ul className="grid gap-4 xl:grid-cols-2 auto-rows-fr list-none p-0 m-0">
+      {[0, 1, 2].map((i) => (
+        <li key={i}>
+          <div className="card min-h-[128px] flex items-center gap-4">
+            <div className="h-32 w-32 rounded border border-border bg-muted shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-1/3 bg-muted rounded" />
+              <div className="h-3 w-1/4 bg-muted rounded" />
+              <div className="h-3 w-1/5 bg-muted rounded" />
+            </div>
+            <div className="ml-auto flex gap-2">
+              <div className="h-8 w-16 bg-muted rounded border border-border" />
+              <div className="h-8 w-20 bg-muted rounded border border-border" />
+            </div>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -94,20 +126,18 @@ export default function ProfilePage() {
       {/* My bookings */}
       <div>
         <h2 className="mb-2 text-lg font-semibold">My bookings</h2>
-        <LazySection>
-          {/* make sure inside this list you pass priority={i===0} to the first card */}
+        <Suspense fallback={<BookingsSkeleton />}>
           <MyBookingsList />
-        </LazySection>
+        </Suspense>
       </div>
 
       {/* Managers: venues */}
       {isManager && (
         <div>
           <h2 className="mb-2 text-lg font-semibold">My venues</h2>
-          <LazySection>
-            {/* same: first card priority */}
+          <Suspense fallback={<VenuesSkeleton />}>
             <MyVenuesList />
-          </LazySection>
+          </Suspense>
         </div>
       )}
     </section>
