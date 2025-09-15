@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/Button';
 import type { Booking } from '@/lib/api/bookings';
 import { getVenueImage, handleImgErrorToPlaceholder } from '@/utils/venueImage';
 
+const THUMB_W = 96;
+const THUMB_H = 64;
+
 type Props = {
   booking: Booking;
   onCancel?: (id: string) => void;
@@ -43,14 +46,18 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
              focus-visible:ring-[rgb(var(--brand))/40]"
           title={`Open ${venueName}`}
         >
-          <img
-            src={src}
-            alt={alt}
-            className="thumb"
-            loading="lazy"
-            decoding="async"
-            onError={handleImgErrorToPlaceholder}
-          />
+          <div className="h-16 w-24 overflow-hidden rounded border border-border shrink-0">
+            <img
+              src={src}
+              alt={alt}
+              width={THUMB_W}
+              height={THUMB_H}
+              className="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
+              onError={handleImgErrorToPlaceholder}
+            />
+          </div>
 
           <div className="min-w-0">
             <p className="font-semibold leading-tight line-clamp-1 hover:underline">{venueName}</p>
@@ -66,14 +73,18 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
         </Link>
       ) : (
         <>
-          <img
-            src={src}
-            alt={alt}
-            className="thumb"
-            loading="lazy"
-            decoding="async"
-            onError={handleImgErrorToPlaceholder}
-          />
+          <div className="h-16 w-24 overflow-hidden rounded border border-border shrink-0">
+            <img
+              src={src}
+              alt={alt}
+              width={THUMB_W}
+              height={THUMB_H}
+              className="h-full w-full object-cover"
+              loading="lazy"
+              decoding="async"
+              onError={handleImgErrorToPlaceholder}
+            />
+          </div>
           <div className="min-w-0 flex-1">
             <p className="mt-1 text-sm flex flex-wrap items-center gap-x-2">{venueName}</p>
             {city && <p className="text-sm text-muted">{city}</p>}
