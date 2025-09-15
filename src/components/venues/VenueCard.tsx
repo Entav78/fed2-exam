@@ -27,6 +27,7 @@ export default function VenueCard({
   showManage = false,
   manageHref,
   className = '',
+  priority = false,
 }: Props) {
   const isRow = layout === 'row';
   const city = venue.location?.city;
@@ -43,12 +44,14 @@ export default function VenueCard({
         <img
           src={src}
           alt={alt}
+          className={isRow ? 'thumb' : 'h-40 w-full object-cover'}
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? ('high' as const) : 'auto'}
+          decoding={priority ? 'sync' : 'async'}
           width={imgOpts.width}
           height={imgOpts.height}
-          className="thumb"
-          loading="lazy"
-          decoding="async"
-          fetchPriority="auto"
+          // Tell the browser how wide this image will render at each breakpoint:
+          sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
           referrerPolicy="no-referrer"
           onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
         />
