@@ -41,7 +41,7 @@ export default function VenueCard({
   const { src, alt } = useGeocodedStaticMap(venue, 0, imgOpts);
 
   const ratio = imgOpts.height / imgOpts.width; // 256/640 = 0.4 in grid, 1 in row
-  const widths = isRow ? [128, 192, 256] : [320, 480, 640, 768, 960];
+  const widths = isRow ? [128, 192, 256] : [320, 360, 420, 480, 640, 768, 960];
 
   // sizes tell the browser how wide it *renders*
   const sizes = isRow
