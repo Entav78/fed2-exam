@@ -225,7 +225,7 @@ export default function VenueDetailPage() {
         <p className="text-xl font-semibold">{nok.format(venue.price)} / night</p>
       </header>
 
-      <VenueGallery venue={venue} />
+      <VenueGallery venue={venue} priority />
 
       {venue.description && (
         <section>
