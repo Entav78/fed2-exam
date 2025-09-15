@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { useGeocodedStaticMap } from '@/hooks/useGeocodedStaticMap';
 import type { Venue } from '@/lib/api/venues';
+import { makeSrcSet } from '@/utils/img';
 import { optimizeRemoteImage } from '@/utils/optimizeRemoteImage';
 import { handleImgErrorToMapThenPlaceholder } from '@/utils/venueImage';
 
@@ -39,6 +40,18 @@ export default function VenueCard({
 
   const { src, alt } = useGeocodedStaticMap(venue, 0, imgOpts);
 
+  const ratio = imgOpts.height / imgOpts.width; // 256/640 = 0.4 in grid, 1 in row
+  const widths = isRow ? [128, 192, 256] : [320, 480, 640, 768, 960];
+
+  // sizes tell the browser how wide it *renders*
+  const sizes = isRow
+    ? '128px' // fixed avatar/thumb in the row layout
+    : '(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw';
+
+  // only build a srcSet for real photos (maps/placeholder can keep normal src)
+  const isCdnPhoto = /images\.(unsplash|pexels)\.com|unsplash\.com|pexels\.com/i.test(src);
+  const srcSet = isCdnPhoto ? makeSrcSet(src, widths, (w) => Math.round(w * ratio)) : undefined;
+
   const srcOptimized = optimizeRemoteImage(src, {
     width: imgOpts.width, // 640 in grid, 128 in row
     height: imgOpts.height, // 256 in grid, 128 in row
@@ -49,15 +62,17 @@ export default function VenueCard({
     return (
       <div className={`card min-h-[112px] flex items-center gap-4 ${className ?? ''}`}>
         <img
-          src={srcOptimized}
+          src={src}
           alt={alt}
+          width={imgOpts.width}
+          height={imgOpts.height}
           className={isRow ? 'thumb' : 'h-40 w-full object-cover'}
+          // LCP hint: only the *first* card gets high priority
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? ('high' as const) : 'auto'}
           decoding={priority ? 'sync' : 'async'}
-          width={imgOpts.width}
-          height={imgOpts.height}
-          sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
+          sizes={sizes}
+          {...(srcSet ? { srcSet } : {})}
           referrerPolicy="no-referrer"
           onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
         />
