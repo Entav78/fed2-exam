@@ -99,9 +99,9 @@ export default function VenueCard({
         width={imgOpts.width} // 640
         height={imgOpts.height} // 256
         className="h-40 w-full object-cover"
-        loading="lazy"
-        decoding="async"
-        fetchPriority="auto"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? ('high' as const) : 'auto'}
+        decoding={priority ? 'sync' : 'async'}
         referrerPolicy="no-referrer"
         onError={handleImgErrorToMapThenPlaceholder(venue, imgOpts)}
       />
