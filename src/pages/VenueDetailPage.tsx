@@ -1,6 +1,4 @@
-/** @file VenueDetailPage – full venue details, gallery, availability picker, and booking CTA. */
-
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import toast from 'react-hot-toast';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -27,33 +25,49 @@ const nok = new Intl.NumberFormat('no-NO', {
   maximumFractionDigits: 0,
 });
 
-/**
- * VenueDetailPage
- *
- * Loads a single venue (owner + bookings), shows media, amenities, a date-range
- * calendar that respects existing bookings, and a guarded booking CTA.
- * Also tries geocoding if coordinates are missing to provide a fallback map pin.
- */
+function useInViewOnce(rootMargin = '800px') {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    if (!ref.current || shown) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setShown(true);
+          io.disconnect();
+        }
+      },
+      { root: null, rootMargin, threshold: 0 },
+    );
+    io.observe(ref.current);
+    return () => io.disconnect();
+  }, [shown, rootMargin]);
+
+  return { ref, shown };
+}
+
 export default function VenueDetailPage() {
   const { id } = useParams<{ id: string }>();
 
-  // --- state & session ---
+  // ✅ All hooks live above any early returns
   const [venue, setVenue] = useState<Venue | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [fallbackCoords, setFallbackCoords] = useState<GeocodeHit | null>(null);
   const [range, setRange] = useState<DateRange | undefined>();
   const loggedIn = useAuthStore((s) => s.isLoggedIn());
+  const navigate = useNavigate();
   const currentUser = useAuthStore((s) => s.user);
   const [guests, setGuests] = useState(1);
   const [bookingBusy, setBookingBusy] = useState(false);
-
-  const navigate = useNavigate();
   const location = useLocation();
+  const { ref: mapSlotRef, shown: mapInView } = useInViewOnce('600px');
 
   const missingDates = !range?.from || !range?.to;
+  const ctaDisabled = bookingBusy || missingDates;
 
-  // --- load venue ---
+  // fetch venue
   useEffect(() => {
     if (!id) return;
     (async () => {
@@ -69,19 +83,24 @@ export default function VenueDetailPage() {
     })();
   }, [id]);
 
-  // --- price nights (simple ms diff; swap to differenceInCalendarDays if you prefer) ---
+  // (optional) compute nights for price display
   const nights = useMemo(() => {
     if (!range?.from || !range?.to) return 0;
     return Math.max(0, Math.round((+range.to - +range.from) / 86400000));
   }, [range]);
 
-  // --- map coords / geocode fallback ---
+  const venueId = venue?.id ?? '';
+  const venueName = venue?.name ?? '';
+  const addr = venue?.location?.address ?? '';
+  const city = venue?.location?.city ?? '';
+  const country = venue?.location?.country ?? '';
   const latVal = venue?.location?.lat;
   const lngVal = venue?.location?.lng;
   const hasStoredCoords = isLikelyValidCoords(latVal, lngVal);
 
   useEffect(() => {
-    if (!venue?.id) return;
+    if (!venueId) return;
+
     if (hasStoredCoords) {
       setFallbackCoords(null);
       return;
@@ -89,14 +108,17 @@ export default function VenueDetailPage() {
 
     let active = true;
     (async () => {
-      const tries = [
-        [venue.location?.address, venue.location?.city, venue.location?.country]
-          .filter(Boolean)
-          .join(', '),
-        [venue.location?.city, venue.location?.country].filter(Boolean).join(', '),
-        venue.name &&
-          [venue.name, venue.location?.city, venue.location?.country].filter(Boolean).join(', '),
-      ].filter(Boolean) as string[];
+      const tries: string[] = [];
+
+      const structured = [addr, city, country].filter(Boolean).join(', ');
+      if (structured) tries.push(structured);
+
+      const formatted = [city, country].filter(Boolean).join(', ');
+      if (formatted && formatted !== structured) tries.push(formatted);
+
+      if (venueName) {
+        tries.push(formatted ? `${venueName}, ${formatted}` : venueName);
+      }
 
       for (const q of [...new Set(tries)]) {
         const hit = await geocodeAddress(q);
@@ -106,57 +128,49 @@ export default function VenueDetailPage() {
           return;
         }
       }
+
       if (active) setFallbackCoords(null);
     })();
 
     return () => {
       active = false;
     };
-  }, [
-    venue?.id,
-    hasStoredCoords,
-    venue?.name,
-    venue?.location?.address,
-    venue?.location?.city,
-    venue?.location?.country,
-  ]);
+  }, [venueId, venueName, addr, city, country, hasStoredCoords]);
 
+  // re-run per venue
+
+  // ✅ Now it's safe to early-return — no hooks below this line
   if (loading) return <p>Loading…</p>;
   if (error) return <p className="text-danger">Error: {error}</p>;
   if (!venue) return <p className="text-muted">No venue found.</p>;
 
-  const hasCoords = isLikelyValidCoords(venue.location?.lat, venue.location?.lng);
-  const coords = hasCoords
-    ? { lat: Number(venue.location!.lat), lng: Number(venue.location!.lng) }
-    : fallbackCoords || undefined;
+  const lat = venue.location?.lat;
+  const lng = venue.location?.lng;
+  const hasCoords = isLikelyValidCoords(lat, lng);
+
+  // prefer real coords; otherwise use the geocoded fallback (with label)
+  const coords = hasCoords ? { lat: Number(lat), lng: Number(lng) } : fallbackCoords;
 
   const locationText = coords?.label ?? formatLocation(venue.location, 'Location not specified');
+
   const mapsHref = coords
     ? `https://www.google.com/maps?q=${coords.lat},${coords.lng}`
     : locationText
       ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationText)}`
       : undefined;
 
-  const isOwner = !!(
-    currentUser?.name &&
-    venue.owner?.name &&
-    currentUser.name === venue.owner.name
-  );
-  const ctaDisabled = bookingBusy || missingDates || isOwner;
-
-  /**
-   * Attempt to create a booking with current inputs.
-   * Validates auth, date range, guests, and prevents booking own venue.
-   */
   async function handleBook() {
     if (!venue) return;
     if (!loggedIn) return toast.error('Please log in to book');
     if (!range?.from || !range?.to) return toast.error('Pick check-in and check-out');
-    if (isOwner) return toast.error("You can't book your own venue");
 
     const g = Number.isFinite(guests) ? guests : 1;
     if (g < 1 || g > venue.maxGuests) {
       return toast.error(`Guests must be between 1 and ${venue.maxGuests}`);
+    }
+    // prevent booking your own venue
+    if (currentUser?.name && venue.owner?.name && currentUser.name === venue.owner.name) {
+      return toast.error("You can't book your own venue");
     }
 
     setBookingBusy(true);
@@ -175,18 +189,19 @@ export default function VenueDetailPage() {
         guests: newBooking.guests,
       };
 
-      // Optimistic add
       setVenue((v) => (v ? { ...v, bookings: [...(v.bookings ?? []), lite] } : v));
+
       setRange(undefined);
       toast.success('Booking confirmed!');
+      // optional: navigate('/bookings');
     } catch (e) {
+      console.error('Booking failed:', e);
       toast.error(e instanceof Error ? e.message : 'Booking failed');
     } finally {
       setBookingBusy(false);
     }
   }
 
-  /** Route to /login with redirect back to this venue if unauthenticated, otherwise book. */
   function onBookClick() {
     if (!loggedIn) {
       const redirect = location.pathname + location.search;
@@ -231,7 +246,7 @@ export default function VenueDetailPage() {
           selected={range}
           onSelect={setRange}
         />
-        <div className="mt-3 flex items-center justify-between" aria-live="polite">
+        <div className="mt-3 flex items-center justify-between">
           <div className="text-sm text-muted">
             {nights > 0
               ? `${nights} night${nights === 1 ? '' : 's'}`
@@ -244,22 +259,20 @@ export default function VenueDetailPage() {
       </section>
 
       <div className="mt-3 flex items-center gap-3">
-        <label className="text-sm" htmlFor="guests">
+        <label className="text-sm">
           Guests
+          <input
+            type="number"
+            min={1}
+            max={venue.maxGuests}
+            value={guests}
+            onChange={(e) =>
+              setGuests(Math.max(1, Math.min(venue.maxGuests, Number(e.target.value) || 1)))
+            }
+            className="ml-2 w-20 field" // was: "input-field"
+          />
+          <span className="ml-2 text-muted">/ max {venue.maxGuests}</span>
         </label>
-        <input
-          id="guests"
-          type="number"
-          min={1}
-          max={venue.maxGuests}
-          value={guests}
-          onChange={(e) => {
-            const n = Number(e.target.value) || 1;
-            setGuests(Math.max(1, Math.min(venue.maxGuests, n)));
-          }}
-          className="w-20 field"
-        />
-        <span className="text-sm text-muted">/ max {venue.maxGuests}</span>
 
         <div className="ml-auto text-right">
           {!loggedIn && (
@@ -283,11 +296,9 @@ export default function VenueDetailPage() {
             title={
               missingDates
                 ? 'Pick check-in and check-out first'
-                : isOwner
-                  ? "You can't book your own venue"
-                  : !loggedIn
-                    ? 'Log in to book'
-                    : undefined
+                : !loggedIn
+                  ? 'Log in to book'
+                  : undefined
             }
           >
             Book this venue
@@ -300,15 +311,17 @@ export default function VenueDetailPage() {
         <h2 className="text-lg font-semibold mb-2">Location</h2>
         <p className="text-muted mb-3">{locationText}</p>
 
-        {coords ? (
+        <div ref={mapSlotRef}>
           <Suspense
             fallback={<div className="h-[320px] rounded-lg border border-border bg-muted" />}
           >
-            <VenueMap lat={coords.lat} lng={coords.lng} name={venue.name} height={320} />
+            {mapInView && coords ? (
+              <VenueMap lat={coords.lat} lng={coords.lng} name={venue.name} height={320} />
+            ) : !coords ? (
+              <p className="text-sm text-muted">No valid map location for this venue.</p>
+            ) : null}
           </Suspense>
-        ) : (
-          <p className="text-sm text-muted">No valid map location for this venue.</p>
-        )}
+        </div>
 
         {mapsHref && locationText && locationText.trim().length > 2 && (
           <a
