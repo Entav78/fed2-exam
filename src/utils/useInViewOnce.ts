@@ -1,3 +1,4 @@
+// src/utils/useInViewOnce.ts
 import { useEffect, useRef, useState } from 'react';
 
 export function useInViewOnce(rootMargin = '600px') {
@@ -5,7 +6,9 @@ export function useInViewOnce(rootMargin = '600px') {
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
-    if (!ref.current || shown) return;
+    const el = ref.current;
+    if (!el || shown) return;
+
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -15,9 +18,10 @@ export function useInViewOnce(rootMargin = '600px') {
       },
       { root: null, rootMargin, threshold: 0 },
     );
-    io.observe(ref.current);
+
+    io.observe(el);
     return () => io.disconnect();
   }, [shown, rootMargin]);
 
-  return { ref, shown };
+  return { ref, shown } as const;
 }
