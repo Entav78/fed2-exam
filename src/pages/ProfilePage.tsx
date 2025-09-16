@@ -1,12 +1,19 @@
+// src/pages/ProfilePage.tsx
+
+/** @file ProfilePage – user profile with banner/avatar editor, lazy-loaded
+ *  “My bookings” and (for managers) “My venues”. Also preloads the banner to
+ *  help LCP on this route.
+ */
+
 import { lazy, Suspense, useEffect } from 'react';
 
 import ProfileMediaEditor from '@/components/profile/ProfileMediaEditor';
 import { useAuthStore } from '@/store/authStore';
-//import { useInViewOnce } from '@/utils/useInViewOnce';
 
 const MyBookingsList = lazy(() => import('@/components/profile/MyBookingsList'));
 const MyVenuesList = lazy(() => import('@/components/profile/MyVenuesList'));
 
+/** Skeleton for the bookings section shown while the chunk loads. */
 function BookingsSkeleton() {
   return (
     <ul className="grid gap-4 xl:grid-cols-2 auto-rows-fr">
@@ -27,6 +34,7 @@ function BookingsSkeleton() {
   );
 }
 
+/** Skeleton for the venues section shown while the chunk loads. */
 function VenuesSkeleton() {
   return (
     <ul className="grid gap-4 xl:grid-cols-2 auto-rows-fr list-none p-0 m-0">
@@ -50,19 +58,27 @@ function VenuesSkeleton() {
   );
 }
 
+/**
+ * Profile page:
+ * - Shows banner/avatar editor.
+ * - Lazy-loads “My bookings” and “My venues” (for managers).
+ * - Preloads the banner URL to improve LCP on this route.
+ */
 export default function ProfilePage() {
   const user = useAuthStore((s) => s.user);
   const isManager = useAuthStore((s) => s.isManager());
   const bannerUrl = useAuthStore((s) => s.user?.banner?.url);
 
-  // ---- Preload the LCP banner on this route ----
+  // Preload the LCP banner (best-effort; cleans up on unmount).
   useEffect(() => {
     if (!bannerUrl) return;
 
-    // 1) Preconnect to the banner's origin (only if we haven't already)
+    // 1) Preconnect to the banner’s origin (only if not already present)
     let createdPreconnect = false;
+    let origin: string | null = null;
+
     try {
-      const origin = new URL(bannerUrl).origin;
+      origin = new URL(bannerUrl).origin;
       const existing = document.querySelector<HTMLLinkElement>(
         `link[rel="preconnect"][href="${origin}"]`,
       );
@@ -75,43 +91,31 @@ export default function ProfilePage() {
         createdPreconnect = true;
       }
     } catch {
-      // ignore bad URLs
+      /* ignore bad URLs */
     }
 
-    // 2) Preload the banner image itself (matches your <img sizes>)
+    // 2) Preload the actual image URL (matches responsive sizes used by <img>)
     const pl = document.createElement('link');
     pl.rel = 'preload';
     pl.as = 'image';
     pl.href = bannerUrl;
+    // If you also have a srcset, you could set: pl.setAttribute('imagesrcset', '…');
     pl.setAttribute('imagesizes', '(min-width:1024px) 1024px, 100vw');
     pl.crossOrigin = 'anonymous';
     document.head.appendChild(pl);
 
     return () => {
-      // remove the preload tag we created
       if (pl.parentNode) pl.parentNode.removeChild(pl);
-      // only remove preconnect if we created it here
-      if (createdPreconnect) {
-        const origin = (() => {
-          try {
-            return new URL(bannerUrl).origin;
-          } catch {
-            return null;
-          }
-        })();
-        if (origin) {
-          const link = document.querySelector<HTMLLinkElement>(
-            `link[rel="preconnect"][href="${origin}"]`,
-          );
-          if (link?.parentNode) link.parentNode.removeChild(link);
-        }
+      if (createdPreconnect && origin) {
+        const link = document.querySelector<HTMLLinkElement>(
+          `link[rel="preconnect"][href="${origin}"]`,
+        );
+        if (link?.parentNode) link.parentNode.removeChild(link);
       }
     };
   }, [bannerUrl]);
 
-  // ----------------------------------------------
-
-  // Early return AFTER hooks to keep hook order stable
+  // Keep hook order stable: early return after hooks.
   if (!user) return null;
 
   return (
@@ -120,7 +124,7 @@ export default function ProfilePage() {
         <h1 className="text-2xl font-bold">Your profile</h1>
       </header>
 
-      {/* Banner + avatar (banner becomes LCP) */}
+      {/* Banner + avatar editor (banner likely becomes LCP) */}
       <ProfileMediaEditor />
 
       {/* My bookings */}
@@ -131,7 +135,7 @@ export default function ProfilePage() {
         </Suspense>
       </div>
 
-      {/* Managers: venues */}
+      {/* Managers: My venues */}
       {isManager && (
         <div>
           <h2 className="mb-2 text-lg font-semibold">My venues</h2>

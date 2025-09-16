@@ -1,20 +1,25 @@
+/** @file RegisterPage – account sign-up with optional “Venue Manager” flag.
+ *  Enforces @stud.noroff.no for Venue Managers and shows friendly API errors.
+ */
+
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
+import { getRegisterUrl } from '@/lib/api/constants';
 
-// You can replace with your constants if you prefer
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'https://v2.api.noroff.dev';
-const REGISTER_URL = `${API_BASE}/auth/register`;
 const API_KEY = import.meta.env.VITE_API_KEY as string | undefined;
 
 type ApiErrorJSON = { errors?: Array<{ message?: string }>; message?: string };
+
+/** Extract a readable error message from the API response shape. */
 function extractApiError(json: unknown, fallback = 'Registration failed') {
   const j = json as ApiErrorJSON;
-  return j.errors?.[0]?.message ?? j.message ?? fallback;
+  return j?.errors?.[0]?.message ?? j?.message ?? fallback;
 }
 
+/** Venue Managers must use a Noroff student address. */
 function isNoroffStudentEmail(email: string) {
   return /@stud\.noroff\.no$/i.test(email.trim());
 }
@@ -33,7 +38,10 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
 
-    if (venueManager && !isNoroffStudentEmail(email)) {
+    const nameT = name.trim();
+    const emailT = email.trim();
+
+    if (venueManager && !isNoroffStudentEmail(emailT)) {
       const msg = 'Venue Managers must use a @stud.noroff.no email.';
       setError(msg);
       toast.error(msg);
@@ -48,13 +56,13 @@ export default function RegisterPage() {
 
     setIsLoading(true);
     try {
-      const res = await fetch(REGISTER_URL, {
+      const res = await fetch(getRegisterUrl(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(API_KEY ? { 'X-Noroff-API-Key': API_KEY } : {}),
         },
-        body: JSON.stringify({ name, email, password, venueManager }),
+        body: JSON.stringify({ name: nameT, email: emailT, password, venueManager }),
       });
 
       const json = await res.json().catch(() => ({}));
@@ -70,6 +78,7 @@ export default function RegisterPage() {
       setIsLoading(false);
     }
   }
+
   const canRegister =
     name.trim() !== '' && email.trim() !== '' && password.trim() !== '' && password === confirm;
 
@@ -78,7 +87,7 @@ export default function RegisterPage() {
       <div className="form-container">
         <h1 className="heading-xl">Create an account</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div>
             <label className="form-label" htmlFor="name">
               Name
@@ -89,6 +98,7 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              autoComplete="name"
               placeholder="Your display name"
             />
           </div>
@@ -104,6 +114,7 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
               placeholder="name@stud.noroff.no"
             />
             <p className="mt-1 text-xs text-muted">
@@ -123,6 +134,7 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="new-password"
                 placeholder="Min. 8 characters"
               />
             </div>
@@ -137,6 +149,7 @@ export default function RegisterPage() {
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
                 required
+                autoComplete="new-password"
               />
             </div>
           </div>
@@ -151,7 +164,11 @@ export default function RegisterPage() {
             I am a Venue Manager
           </label>
 
-          {error && <p className="text-danger text-sm">{error}</p>}
+          {error && (
+            <p className="text-danger text-sm" role="alert" aria-live="assertive">
+              {error}
+            </p>
+          )}
 
           <Button
             type="submit"

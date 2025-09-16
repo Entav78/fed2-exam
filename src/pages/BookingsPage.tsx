@@ -1,4 +1,3 @@
-// src/pages/BookingsPage.tsx
 import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -7,24 +6,46 @@ import ChangeBookingDialog from '@/components/bookings/ChangeBookingDialog';
 import { type Booking, deleteBooking, getMyBookings } from '@/lib/api/bookings';
 import { useAuthStore } from '@/store/authStore';
 
-function byDateFromAsc(a: Booking, b: Booking) {
+/**
+ * Sort helper: ascending by `dateFrom`.
+ * @param a - First booking.
+ * @param b - Second booking.
+ * @returns Negative if `a` starts earlier than `b`, positive if later, 0 if equal.
+ */
+function byDateFromAsc(a: Booking, b: Booking): number {
   return new Date(a.dateFrom).getTime() - new Date(b.dateFrom).getTime();
 }
-function isPastLocal(b: Booking, todayMidnight: Date) {
+
+/**
+ * Returns whether a booking has ended at or before the given local midnight.
+ * (Treats `dateTo` as checkout day; anything ending on/before today’s midnight is considered “past”.)
+ * @param b - Booking to test.
+ * @param todayMidnight - A Date object at local midnight.
+ */
+function isPastLocal(b: Booking, todayMidnight: Date): boolean {
   return new Date(b.dateTo).getTime() <= todayMidnight.getTime();
 }
 
+/**
+ * BookingsPage
+ *
+ * Displays the signed-in user’s bookings, split into “Upcoming” and “Past”.
+ * - Fetches bookings for the current user on mount and when edits occur.
+ * - Supports optimistic cancellation with rollback on failure.
+ * - Allows changing dates via a dialog (mounted once at the end of the page).
+ */
 export default function BookingsPage() {
   const user = useAuthStore((s) => s.user);
+
   const [rows, setRows] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  // derive a primitive
+  // Derive a stable primitive for effect deps
   const username = user?.name ?? '';
 
-  // local midnight boundary (stable for memo deps)
+  // Local midnight boundary (stable for memo deps)
   const todayMidnight = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -33,6 +54,7 @@ export default function BookingsPage() {
 
   useEffect(() => {
     if (!username) return;
+
     let active = true;
     (async () => {
       try {
@@ -47,20 +69,24 @@ export default function BookingsPage() {
         if (active) setLoading(false);
       }
     })();
+
     return () => {
       active = false;
     };
   }, [username]);
 
-  const upcoming = useMemo(() => {
-    return rows.filter((b) => !isPastLocal(b, todayMidnight)).sort(byDateFromAsc); // soonest first
-  }, [rows, todayMidnight]);
+  const upcoming = useMemo(
+    () => rows.filter((b) => !isPastLocal(b, todayMidnight)).sort(byDateFromAsc),
+    [rows, todayMidnight],
+  );
 
-  const past = useMemo(() => {
-    return rows
-      .filter((b) => isPastLocal(b, todayMidnight))
-      .sort((a, b) => new Date(b.dateTo).getTime() - new Date(a.dateTo).getTime()); // most recent first
-  }, [rows, todayMidnight]);
+  const past = useMemo(
+    () =>
+      rows
+        .filter((b) => isPastLocal(b, todayMidnight))
+        .sort((a, b) => new Date(b.dateTo).getTime() - new Date(a.dateTo).getTime()),
+    [rows, todayMidnight],
+  );
 
   const [editing, setEditing] = useState<Booking | null>(null);
 
@@ -70,6 +96,7 @@ export default function BookingsPage() {
   function closeDialog() {
     setEditing(null);
   }
+
   const refetchBookings = async () => {
     if (!username) return;
     const fresh = await getMyBookings(username, true);
@@ -80,15 +107,14 @@ export default function BookingsPage() {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
     const prev = rows;
     setBusyId(id);
-    setRows((r) => r.filter((b) => b.id !== id));
+    setRows((r) => r.filter((b) => b.id !== id)); // optimistic
     try {
       await deleteBooking(id);
       const fresh = await getMyBookings(username, true);
-
       setRows(fresh.sort(byDateFromAsc));
       toast.success('Booking cancelled');
     } catch (e) {
-      setRows(prev);
+      setRows(prev); // rollback
       toast.error((e as Error).message ?? 'Could not cancel booking');
     } finally {
       setBusyId(null);
@@ -139,7 +165,6 @@ export default function BookingsPage() {
         </>
       )}
 
-      {/* 🔽 Mount the dialog ONCE, outside the lists */}
       {editing?.venue?.id && (
         <ChangeBookingDialog
           booking={editing}

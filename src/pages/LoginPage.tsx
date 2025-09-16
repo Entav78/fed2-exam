@@ -1,3 +1,5 @@
+/** @file LoginPage – email/password login with safe redirect, profile fetch, and auth store sync. */
+
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -18,7 +20,6 @@ type LoginSuccess = {
     avatar?: { url?: string; alt?: string };
   };
 };
-
 type MeProfile = {
   name: string;
   email: string;
@@ -27,42 +28,52 @@ type MeProfile = {
   banner?: { url?: string; alt?: string } | null;
 };
 
+/**
+ * Extract a readable error message from an API response JSON.
+ * Falls back to a generic string if none is present.
+ */
 function extractApiError(json: unknown, fallback = 'Login failed') {
   const j = json as ApiErrorJSON;
   return j.errors?.[0]?.message ?? j.message ?? fallback;
 }
 
-const LoginPage = () => {
+/**
+ * Page component: handles credential submission, validates redirect target,
+ * fetches the profile, and hydrates the auth store.
+ */
+export default function LoginPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const login = useAuthStore((s) => s.login);
 
+  // Validate and normalize ?redirect=… to a same-site, non-login path.
   const redirect = (() => {
     const raw = new URLSearchParams(location.search).get('redirect') || '/';
-    // allow only safe, same-site paths and avoid loops
     if (
-      !raw.startsWith('/') || // external or malformed
-      raw.startsWith('//') || // protocol-relative
-      raw.includes('://') || // absolute URL
-      raw.startsWith('/login') || // don't bounce back to login
-      raw.startsWith('/register') // don't bounce back to register
+      !raw.startsWith('/') ||
+      raw.startsWith('//') ||
+      raw.includes('://') ||
+      raw.startsWith('/login') ||
+      raw.startsWith('/register')
     ) {
       return '/';
     }
     return raw;
   })();
-  const login = useAuthStore((s) => s.login);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  /** Submit credentials, then fetch profile and store auth on success. */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
+      // 1) Login
       const res = await fetch(getLoginUrl(), {
         method: 'POST',
         headers: {
@@ -71,22 +82,19 @@ const LoginPage = () => {
         },
         body: JSON.stringify({ email, password }),
       });
-
       const json = (await res.json().catch(() => ({}))) as ApiErrorJSON & LoginSuccess;
-
-      if (!res.ok) {
-        throw new Error(extractApiError(json));
-      }
+      if (!res.ok) throw new Error(extractApiError(json));
 
       const d = json.data;
-      if (!d?.accessToken || !d?.email || !d?.name) {
-        throw new Error('Invalid login response');
-      }
+      if (!d?.accessToken || !d?.email || !d?.name) throw new Error('Invalid login response');
 
       try {
         localStorage.setItem('token', d.accessToken);
-      } catch {}
+      } catch {
+        /* ignore storage errors */
+      }
 
+      // 2) Fetch profile
       const meUrl = `${API_PROFILES}/${encodeURIComponent(d.name)}`;
       const meRes = await fetch(meUrl, { headers: buildHeaders() });
       if (!meRes.ok) {
@@ -97,25 +105,25 @@ const LoginPage = () => {
 
       const meJson = await meRes.json().catch(() => ({}));
       const me = meJson?.data as MeProfile | undefined;
-
-      if (!me?.name || !me?.email) {
-        throw new Error('Profile response missing required fields');
-      }
+      if (!me?.name || !me?.email) throw new Error('Profile response missing required fields');
 
       const toMedia = (m?: { url?: string; alt?: string } | null) =>
         m?.url ? { url: m.url, alt: m.alt ?? me.name } : null;
 
+      // 3) Hydrate auth store
       login({
         name: me.name,
         email: me.email,
         accessToken: d.accessToken,
         venueManager: !!me.venueManager,
         avatarUrl: me.avatar?.url ?? null,
-        avatar: toMedia(me.avatar), // Media | null
+        avatar: toMedia(me.avatar),
         banner: toMedia(me.banner),
       });
 
       toast.success('Logged in successfully!');
+      // Clear sensitive state
+      setPassword('');
       navigate(redirect, { replace: true });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Login failed';
@@ -125,12 +133,16 @@ const LoginPage = () => {
       setIsLoading(false);
     }
   };
+
   const canSubmit = email.trim() !== '' && password.trim() !== '';
+  const errorId = error ? 'login-error' : undefined;
+
   return (
     <section className="max-w-md mx-auto p-4">
       <div className="form-container">
         <h1 className="heading-xl">Login</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div>
             <label className="form-label" htmlFor="email">
               Email
@@ -144,6 +156,8 @@ const LoginPage = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="you@stud.noroff.no"
+              aria-invalid={error ? true : undefined}
+              aria-describedby={errorId}
             />
           </div>
 
@@ -159,10 +173,16 @@ const LoginPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              aria-invalid={error ? true : undefined}
+              aria-describedby={errorId}
             />
           </div>
 
-          {error && <p className="text-danger text-sm">{error}</p>}
+          {error && (
+            <p id="login-error" role="alert" className="text-danger text-sm">
+              {error}
+            </p>
+          )}
 
           <Button
             type="submit"
@@ -178,6 +198,4 @@ const LoginPage = () => {
       </div>
     </section>
   );
-};
-
-export default LoginPage;
+}

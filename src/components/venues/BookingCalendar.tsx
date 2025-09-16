@@ -1,6 +1,6 @@
 /** @file BookingCalendar – range calendar that blocks past/booked days and prevents overlapping selections. */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { DayPicker } from 'react-day-picker';
 import { addDays, areIntervalsOverlapping, startOfToday } from 'date-fns';
@@ -38,6 +38,23 @@ function overlapsBooked(range: DateRange, booked: { from: Date; to: Date }[]) {
   );
 }
 
+function useResponsiveMonths(defaultMonths = 2) {
+  const [months, setMonths] = useState(defaultMonths);
+  useEffect(() => {
+    const xl = window.matchMedia('(min-width: 1280px)'); // 3 months
+    const md = window.matchMedia('(min-width: 640px)'); // 2 months
+    const update = () => setMonths(xl.matches ? 3 : md.matches ? 2 : 1);
+    update();
+    xl.addEventListener('change', update);
+    md.addEventListener('change', update);
+    return () => {
+      xl.removeEventListener('change', update);
+      md.removeEventListener('change', update);
+    };
+  }, []);
+  return months;
+}
+
 /**
  * BookingCalendar
  *
@@ -46,12 +63,8 @@ function overlapsBooked(range: DateRange, booked: { from: Date; to: Date }[]) {
  * - Prevents selecting ranges that overlap existing bookings.
  * - Emits `undefined` and shows a conflict message when an invalid range is picked.
  */
-export default function BookingCalendar({
-  bookings,
-  selected,
-  onSelect,
-  numberOfMonths = 2,
-}: Props) {
+export default function BookingCalendar({ bookings, selected, onSelect, numberOfMonths }: Props) {
+  const responsiveMonths = useResponsiveMonths(2);
   const bookedIntervals = useMemo(() => bookingsToDisabledRanges(bookings), [bookings]);
 
   const disabled = useMemo(() => {
@@ -72,12 +85,12 @@ export default function BookingCalendar({
   };
 
   return (
-    <div className="rounded-lg border border-border bg-card p-3">
+    <div className="inline-block max-w-full rounded-lg border border-border bg-card p-3">
       <DayPicker
         mode="range"
         selected={selected}
         onSelect={handleSelect}
-        numberOfMonths={numberOfMonths}
+        numberOfMonths={numberOfMonths ?? responsiveMonths}
         disabled={disabled}
         showOutsideDays
         weekStartsOn={1}

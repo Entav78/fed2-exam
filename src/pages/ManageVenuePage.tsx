@@ -1,3 +1,5 @@
+/** @file ManageVenuePage – create/edit/delete a venue with images, amenities and location fields. */
+
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -15,21 +17,26 @@ import { normalizeCity } from '@/lib/cities';
 import { normalizeCountry } from '@/lib/countries';
 import { useAuthStore } from '@/store/authStore';
 
+/**
+ * Local form shape for the venue editor.
+ * Uses strings for most inputs to match <input> values and converts on submit.
+ */
 type FormState = {
   name: string;
   description: string;
   price: number | string;
   maxGuests: number | string;
-  // ✅ multiple images
+
+  /** Multiple images; at least one row kept for UX. */
   images: Array<{ url: string; alt: string }>;
 
-  // amenities/meta
+  /** Amenities (meta). */
   wifi: boolean;
   parking: boolean;
   breakfast: boolean;
   pets: boolean;
 
-  // location
+  /** Location fields; lat/lng captured as strings and validated on submit. */
   address: string;
   city: string;
   zip: string;
@@ -44,12 +51,13 @@ const emptyForm: FormState = {
   description: '',
   price: '',
   maxGuests: 1,
-  images: [{ url: '', alt: '' }], // start with one row
+  images: [{ url: '', alt: '' }],
 
   wifi: false,
   parking: false,
   breakfast: false,
   pets: false,
+
   address: '',
   city: '',
   zip: '',
@@ -59,9 +67,17 @@ const emptyForm: FormState = {
   lng: '',
 };
 
-// For strongly-typed checkbox handler:
+/** Strongly-typed keys for amenity checkboxes. */
 type BoolKey = 'wifi' | 'parking' | 'breakfast' | 'pets';
 
+/**
+ * ManageVenuePage
+ *
+ * - If `id` present, loads the venue and ensures the current user owns it.
+ * - Tracks a dirty snapshot and warns on `beforeunload`.
+ * - Validates inputs (URLs, lat/lng ranges) and normalizes country/city.
+ * - Creates or updates a venue; allows deletion when editing.
+ */
 export default function ManageVenuePage() {
   const currentName = useAuthStore((s) => s.user?.name);
   const { id } = useParams<{ id: string }>();
@@ -85,6 +101,7 @@ export default function ManageVenuePage() {
         setLoading(true);
         const v = await getVenueById(id!, { owner: true, bookings: false });
 
+        // Guard: only owners can edit their venues
         if (v.owner?.name && currentName && v.owner.name !== currentName) {
           toast.error('You can only edit your own venue');
           navigate('/profile');
@@ -93,7 +110,7 @@ export default function ManageVenuePage() {
 
         const f = fromVenueToForm(v);
         setForm(f);
-        setInitial(JSON.stringify(f)); // ✅ snapshot here
+        setInitial(JSON.stringify(f));
       } catch (e) {
         toast.error((e as Error).message ?? 'Could not load venue');
       } finally {
@@ -104,12 +121,12 @@ export default function ManageVenuePage() {
 
   const dirty = initial !== null && JSON.stringify(form) !== initial;
 
-  // ✅ separate effect just for beforeunload
+  // Warn on tab close if there are unsaved changes
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       if (!dirty) return;
       e.preventDefault();
-      e.returnValue = ''; // required for some browsers
+      e.returnValue = '';
     };
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
@@ -118,10 +135,14 @@ export default function ManageVenuePage() {
   if (!isManager) return <p className="text-danger">Managers only.</p>;
   if (loading) return <p>Loading…</p>;
 
+  /**
+   * Map an API `Venue` object to the local editable form state.
+   */
   function fromVenueToForm(v: Venue): FormState {
     const imgs = (v.media ?? [])
       .map((m) => ({ url: m?.url ?? '', alt: m?.alt ?? '' }))
       .slice(0, 12);
+
     return {
       name: v.name ?? '',
       description: v.description ?? '',
@@ -142,14 +163,16 @@ export default function ManageVenuePage() {
     };
   }
 
+  /**
+   * Convert form state to the API `VenueInput` payload, normalizing fields.
+   */
   function toVenueInput(f: FormState): VenueInput {
     const media = f.images
       .map(({ url, alt }) => ({ url: url.trim(), alt: alt.trim() }))
-      .filter((m) => m.url && /^https?:\/\//i.test(m.url)); // keep http(s) only
+      .filter((m) => m.url && /^https?:\/\//i.test(m.url));
 
     const val = (s?: string) => (s?.trim() ? s.trim() : undefined);
     const num = (s?: string) => (s && s.trim() !== '' ? Number(s) : undefined);
-
     const normalizedCountry = normalizeCountry(f.country);
 
     const location = {
@@ -157,7 +180,7 @@ export default function ManageVenuePage() {
       city: val(f.city),
       zip: val(f.zip),
       country: normalizedCountry ?? undefined,
-      continent: val(f.continent), // or derive from country if you want
+      continent: val(f.continent),
       lat: num(f.lat),
       lng: num(f.lng),
     };
@@ -173,20 +196,23 @@ export default function ManageVenuePage() {
     };
   }
 
+  /** Text/number input handler factory. */
   function onField<K extends keyof FormState>(key: K) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const val = e.currentTarget.value; // keep as string; cast on submit
+      const val = e.currentTarget.value;
       setForm((s) => ({ ...s, [key]: val }));
     };
   }
 
+  /** Checkbox handler factory for amenities. */
   function onBool(key: BoolKey) {
     return (e: React.ChangeEvent<HTMLInputElement>) => {
-      const { checked } = e.currentTarget; // read immediately
+      const { checked } = e.currentTarget;
       setForm((s) => ({ ...s, [key]: checked }));
     };
   }
 
+  /** Image field handler (by row index + key). */
   function onImageField(i: number, key: 'url' | 'alt') {
     return (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = e.currentTarget.value;
@@ -197,9 +223,13 @@ export default function ManageVenuePage() {
       });
     };
   }
+
+  /** Append a blank image row. */
   function addImageRow() {
     setForm((s) => ({ ...s, images: [...s.images, { url: '', alt: '' }] }));
   }
+
+  /** Remove an image row (always keeps at least one row). */
   function removeImageRow(i: number) {
     setForm((s) => {
       const images = s.images.slice();
@@ -208,11 +238,14 @@ export default function ManageVenuePage() {
     });
   }
 
+  /**
+   * Validate and submit the form – create or update based on `editing`.
+   */
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim()) return toast.error('Name is required');
 
-    // Validate images (optional: require http(s) if provided)
+    // Validate images (URLs must be http/https if provided)
     const bad = form.images.find((img) => img.url.trim() && !/^https?:\/\//i.test(img.url.trim()));
     if (bad) return toast.error('All image URLs must start with http(s)');
 
@@ -234,15 +267,15 @@ export default function ManageVenuePage() {
 
     setBusy(true);
     try {
+      // Normalize location strings (country/city)
       const canonCountry = normalizeCountry(form.country ?? null);
       const canonCity = normalizeCity(form.city ?? null);
 
       const payload = toVenueInput(form);
-
       payload.location = {
         ...(payload.location ?? {}),
-        country: canonCountry ?? undefined, // remove if unknown
-        city: canonCity ?? undefined, // remove if unknown
+        country: canonCountry ?? undefined,
+        city: canonCity ?? undefined,
       };
 
       if (form.country && !canonCountry) toast('Unknown country removed');
@@ -252,8 +285,6 @@ export default function ManageVenuePage() {
         setBusy(false);
         return toast.error('Please add at least one image URL.');
       }
-
-      toast.success(editing ? 'Venue updated' : 'Venue created');
 
       if (editing) {
         await updateVenue(id!, payload);
@@ -272,6 +303,9 @@ export default function ManageVenuePage() {
     }
   }
 
+  /**
+   * Delete the current venue after confirmation and return to profile.
+   */
   async function handleDelete() {
     if (!editing) return;
     if (!confirm('Delete this venue? This cannot be undone.')) return;
@@ -318,7 +352,7 @@ export default function ManageVenuePage() {
           <textarea
             id="description"
             className="field-textarea"
-            rows={6} // optional; min-h handles the height too
+            rows={6}
             value={form.description}
             onChange={onField('description')}
           />
@@ -477,7 +511,7 @@ export default function ManageVenuePage() {
               {busy ? 'Deleting…' : 'Delete'}
             </Button>
           )}
-          <Button type="submit" variant="outline" disabled={!canSubmit || busy}>
+          <Button type="submit" variant="primary" disabled={!canSubmit || busy}>
             {busy ? (editing ? 'Saving…' : 'Creating…') : editing ? 'Save changes' : 'Create venue'}
           </Button>
         </div>

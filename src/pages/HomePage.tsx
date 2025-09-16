@@ -1,3 +1,5 @@
+/** @file HomePage – venue discovery with filters, availability window, URL sync, and infinite scroll. */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -9,14 +11,19 @@ import { normalizeCity } from '@/lib/cities';
 import { normalizeCountry } from '@/lib/countries';
 import { isImagelessVenue } from '@/utils/venueImage';
 
-// Build only the fields the API cares about for the list call
-function toVenueListParams(p: {
+type ListParams = {
   q?: string;
   sort?: 'price' | 'rating' | 'created';
   order?: 'asc' | 'desc';
   page?: number;
   limit?: number;
-}) {
+};
+
+/**
+ * Build API list params for `/venues` from UI state.
+ * Always requests `_bookings` and `_owner` expansions for downstream filtering.
+ */
+function toVenueListParams(p: ListParams) {
   const q = (p.q ?? '').trim();
   return {
     ...(q ? { q } : {}),
@@ -29,19 +36,30 @@ function toVenueListParams(p: {
   } as const;
 }
 
+/** Return a new Date `n` days after `date` (does not mutate input). */
 function addDays(date: Date, n: number) {
   const d = new Date(date);
   d.setDate(d.getDate() + n);
   return d;
 }
+
+/** Format a Date as `YYYY-MM-DD` (ISO date without time). */
 function toISODate(d: Date) {
   return d.toISOString().slice(0, 10);
 }
 
+/**
+ * HomePage
+ *
+ * - Syncs filters & availability controls with the URL.
+ * - Loads venues server-first (with graceful fallback if `q` yields zero results).
+ * - Filters client-side by availability, text, price, amenities, country/city.
+ * - Supports infinite scroll with a manual “Load more” fallback button.
+ */
 export default function HomePage() {
   const API_LIMIT = 24;
 
-  // default: tomorrow → 2 nights
+  // Availability controls: default tomorrow → 2 nights
   const [dateFrom, setDateFrom] = useState(toISODate(addDays(new Date(), 1)));
   const [dateTo, setDateTo] = useState(toISODate(addDays(new Date(), 3)));
   const [guests, setGuests] = useState(2);
@@ -58,7 +76,6 @@ export default function HomePage() {
   const debouncedQ = useDebouncedValue(filters.q, 300);
 
   const [allFetched, setAllFetched] = useState<Venue[]>([]);
-
   const [fetchPage, setFetchPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -70,7 +87,7 @@ export default function HomePage() {
     [allFetched],
   );
 
-  // If rating becomes unavailable, fall back to "Newest"
+  // If rating sort becomes invalid, fall back to "Newest"
   useEffect(() => {
     if (filters.sort === 'rating' && !hasRatings) {
       setFilters((f) => ({ ...f, sort: 'created', order: 'desc' }));
@@ -86,7 +103,7 @@ export default function HomePage() {
 
   const cities = useMemo(() => {
     if (!filters.country) return [];
-    const wanted = filters.country; // canonical country
+    const wanted = filters.country;
     const list = allFetched
       .filter((v) => normalizeCountry(v.location?.country ?? null) === wanted)
       .map((v) => normalizeCity(v.location?.city ?? null))
@@ -94,24 +111,26 @@ export default function HomePage() {
     return Array.from(new Set(list)).sort((a, b) => a.localeCompare(b));
   }, [allFetched, filters.country]);
 
-  // If the current city becomes invalid after country change, clear it
+  // Clear city if it’s no longer valid for the selected country
   useEffect(() => {
     if (filters.city && !cities.includes(filters.city)) {
       setFilters((f) => ({ ...f, city: undefined }));
     }
-  }, [filters.city, cities, setFilters]); // run when country or the set of cities changes
+  }, [filters.city, cities, setFilters]);
 
+  // ---------- URL sync ----------
   const [searchParams, setSearchParams] = useSearchParams();
   const spKey = searchParams.toString();
 
   useEffect(() => {
-    const next = new URLSearchParams(spKey); // preserve unrelated params safely
+    const next = new URLSearchParams(spKey);
 
     const setOrDelete = (sp: URLSearchParams, k: string, v?: string | number | boolean | null) => {
       if (v === undefined || v === null || v === '' || v === false) sp.delete(k);
       else sp.set(k, String(v));
     };
 
+    // Filters
     setOrDelete(next, 'q', debouncedQ || undefined);
     setOrDelete(next, 'sort', filters.sort !== 'created' ? filters.sort : undefined);
     setOrDelete(next, 'order', filters.order !== 'desc' ? filters.order : undefined);
@@ -126,14 +145,14 @@ export default function HomePage() {
     setOrDelete(next, 'city', filters.city || undefined);
     setOrDelete(next, 'noimg', includeNoImage ? 1 : undefined);
 
-    // Availability controls
+    // Availability
     setOrDelete(next, 'from', dateFrom);
     setOrDelete(next, 'to', dateTo);
     setOrDelete(next, 'guests', guests > 1 ? guests : undefined);
 
     setSearchParams(next, { replace: true });
   }, [
-    spKey, // 👈 replaces searchParams in deps
+    spKey,
     debouncedQ,
     filters.sort,
     filters.order,
@@ -153,8 +172,8 @@ export default function HomePage() {
     setSearchParams,
   ]);
 
+  // Initialize from URL once
   useEffect(() => {
-    // Filters
     setFilters((prev) => ({
       ...prev,
       q: searchParams.get('q') ?? '',
@@ -171,23 +190,18 @@ export default function HomePage() {
       city: searchParams.get('city') ?? undefined,
     }));
 
-    // Availability controls
     const from = searchParams.get('from');
     const to = searchParams.get('to');
     const g = searchParams.get('guests');
-
     if (from) setDateFrom(from);
     if (to) setDateTo(to);
     if (g && !Number.isNaN(+g)) setGuests(Math.max(1, +g));
 
-    // ✅ include-no-image toggle (own state)
     setIncludeNoImage(searchParams.get('noimg') === '1' || searchParams.get('noimg') === 'true');
-
-    // run once
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Initial load (and when q/sort/order change)
+  // ---------- Initial load (and when q/sort/order change) ----------
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -198,7 +212,7 @@ export default function HomePage() {
 
     (async () => {
       try {
-        // Try server-side q
+        // Server-side search first
         let page1 = await fetchVenues(
           toVenueListParams({
             q: debouncedQ,
@@ -209,7 +223,7 @@ export default function HomePage() {
           }),
         );
 
-        // Fallback: same request without q if nothing came back
+        // Fallback: same request without q if zero results
         if (debouncedQ && page1.length === 0) {
           page1 = await fetchVenues(
             toVenueListParams({
@@ -236,6 +250,7 @@ export default function HomePage() {
     };
   }, [debouncedQ, filters.sort, filters.order]);
 
+  // ---------- Infinite scroll ----------
   const loadMore = useCallback(async () => {
     if (!hasMore || loadingMore) return;
     setLoadingMore(true);
@@ -282,28 +297,23 @@ export default function HomePage() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!hasMore) return; // nothing to observe if there’s no more pages
-    if (loading || loadingMore) return;
-
+    if (!hasMore || loading || loadingMore) return;
     const el = sentinelRef.current;
     if (!el) return;
 
     const obs = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
-        if (entry.isIntersecting) {
-          // small microtask delay to avoid rapid double fires
-          Promise.resolve().then(() => loadMore());
-        }
+        if (entry.isIntersecting) Promise.resolve().then(() => loadMore());
       },
-      { root: null, rootMargin: '800px 0px 0px 0px', threshold: 0 }, // start early
+      { root: null, rootMargin: '800px 0px 0px 0px', threshold: 0 },
     );
 
     obs.observe(el);
     return () => obs.disconnect();
   }, [hasMore, loading, loadingMore, loadMore]);
 
-  // Availability first
+  // ---------- Client-side filtering ----------
   const available = useMemo(() => {
     if (!dateFrom || !dateTo) return [];
     return allFetched.filter((v) => isVenueAvailable(v, dateFrom, dateTo, guests));
@@ -330,7 +340,7 @@ export default function HomePage() {
 
     let list = available;
 
-    // country/city first (canonical names)
+    // Country / city
     if (filters.country) {
       list = list.filter((v) => normalizeCountry(v.location?.country ?? null) === filters.country);
     }
@@ -338,10 +348,10 @@ export default function HomePage() {
       list = list.filter((v) => normalizeCity(v.location?.city ?? null) === filters.city);
     }
 
-    // free-text
+    // Text
     if (q) list = list.filter((v) => hay(v).includes(q));
 
-    // numeric/toggles
+    // Numeric / toggles
     if (filters.guests) list = list.filter((v) => v.maxGuests >= Number(filters.guests));
     if (filters.minPrice) list = list.filter((v) => v.price >= Number(filters.minPrice));
     if (filters.maxPrice) list = list.filter((v) => v.price <= Number(filters.maxPrice));
@@ -350,13 +360,12 @@ export default function HomePage() {
     if (filters.breakfast) list = list.filter((v) => !!v.meta?.breakfast);
     if (filters.pets) list = list.filter((v) => !!v.meta?.pets);
 
-    // sort (clone before sorting)
+    // Sort (keep server order for "Newest")
     const dir = filters.order === 'asc' ? 1 : -1;
     if (filters.sort === 'price') return [...list].sort((a, b) => (a.price - b.price) * dir);
     if (filters.sort === 'rating')
       return [...list].sort((a, b) => ((a.rating ?? 0) - (b.rating ?? 0)) * dir);
 
-    // "Newest" – keep server order
     return list;
   }, [available, debouncedQ, filters]);
 
@@ -379,19 +388,16 @@ export default function HomePage() {
         onChange={(next) => setFilters(next)}
         onClear={() => {
           setFilters({ q: '', sort: 'created', order: 'desc' });
-          setIncludeNoImage(false); // optional
+          setIncludeNoImage(false);
         }}
         countries={countries}
         cities={cities}
         hasRatings={hasRatings}
       />
 
-      {/* Availability form */}
+      {/* Availability controls */}
       <form
-        className="
-    grid gap-3 items-end mb-6 overflow-hidden max-w-full
-    sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_120px]
-  "
+        className="grid gap-3 items-end mb-6 overflow-hidden max-w-full sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_120px]"
         onSubmit={(e) => e.preventDefault()}
       >
         <label className="block min-w-0">
