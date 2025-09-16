@@ -53,7 +53,7 @@ export default function VenueGallery({ venue, priority = false }: Props) {
   const current = normalized[Math.min(active, normalized.length - 1)];
 
   const isCdnPhoto = /images\.(unsplash|pexels)\.com|unsplash\.com|pexels\.com/i.test(current.url);
-  const heroWidths = [480, 640, 768, 960, 1024];
+  const heroWidths = [360, 480, 640, 768, 960, 1024];
   const heroSrcSet = isCdnPhoto
     ? makeSrcSet(current.url, heroWidths, (w) => Math.round(w * HERO_RATIO))
     : undefined;
@@ -109,6 +109,7 @@ export default function VenueGallery({ venue, priority = false }: Props) {
                     className="h-full w-full object-cover"
                     loading="lazy"
                     decoding="async"
+                    fetchPriority="low"
                     onError={handleImgErrorToPlaceholder}
                   />
                 </button>
