@@ -1,11 +1,13 @@
-// eslint.config.js
 import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 import { globalIgnores } from 'eslint/config';
-import simpleImportSort from 'eslint-plugin-simple-import-sort'; // ✅
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
+
+// 👇 add this
+const isProd = process.env.CI === 'true' || process.env.NODE_ENV === 'production';
 
 export default tseslint.config([
   globalIgnores(['dist']),
@@ -22,20 +24,24 @@ export default tseslint.config([
       globals: globals.browser,
     },
     plugins: {
-      'simple-import-sort': simpleImportSort, // ✅
+      'simple-import-sort': simpleImportSort,
     },
     rules: {
-      // keep imports nicely grouped/sorted
+      // stricter in CI/prod
+      'no-console': [isProd ? 'error' : 'warn', { allow: ['warn', 'error'] }],
+      'no-debugger': isProd ? 'error' : 'warn',
+
+      'no-empty': ['error', { allowEmptyCatch: true }],
       'simple-import-sort/imports': [
         'error',
         {
           groups: [
-            ['^\\u0000'], // side effect imports
-            ['^node:', '^react', '^@?\\w'], // node builtins + packages
-            ['^@/'], // your alias
-            ['^\\.\\.(?!/?$)', '^\\.\\./?$'], // parent
-            ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'], // siblings/index
-            ['^.+\\.s?css$'], // styles last
+            ['^\\u0000'],
+            ['^node:', '^react', '^@?\\w'],
+            ['^@/'],
+            ['^\\.\\.(?!/?$)', '^\\./?\\.?$'],
+            ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
+            ['^.+\\.s?css$'],
           ],
         },
       ],

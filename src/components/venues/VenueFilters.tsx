@@ -1,7 +1,10 @@
+/** @file VenueFilter – compact filter bar for searching, pricing, amenities, location, and sort order. */
+
 import React from 'react';
 
 import { Button } from '@/components/ui/Button';
 
+/** Shape of the filter state driven by this component. */
 export type VenueFiltersState = {
   q: string;
   minPrice?: string;
@@ -17,15 +20,30 @@ export type VenueFiltersState = {
   city?: string;
 };
 
+/** Props for {@link VenueFilters}. */
 type Props = {
+  /** Current filter values (controlled). */
   value: VenueFiltersState;
+  /** Called whenever a filter value changes with the full next state. */
   onChange: (next: VenueFiltersState) => void;
+  /** Optional clear-all handler. */
   onClear?: () => void;
-  countries?: string[]; // pass from HomePage
-  cities?: string[]; // pass from HomePage (depends on country)
+  /** Available countries (for the country select). */
+  countries?: string[];
+  /** Available cities (depends on country). */
+  cities?: string[];
+  /** Whether rating sort options should be shown. */
   hasRatings?: boolean;
 };
 
+/**
+ * VenueFilters
+ *
+ * Controlled filter group:
+ * - Search query, min/max price, amenity toggles
+ * - Country/City selects (city disabled until a country is chosen)
+ * - Combined sort dropdown (sort + order in one value)
+ */
 export default function VenueFilters({
   value,
   onChange,
@@ -53,7 +71,7 @@ export default function VenueFilters({
     onChange({ ...value, sort, order });
   };
 
-  // Optional nicety: when country changes, clear city if no country selected
+  // When country changes, clear city if country becomes empty
   const onCountryChange: React.ChangeEventHandler<HTMLSelectElement> = (e) => {
     const nextCountry = e.currentTarget.value;
     const next = { ...value, country: nextCountry };

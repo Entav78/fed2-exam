@@ -1,3 +1,5 @@
+/** @file BookingCard – compact row card for a single booking with a fixed-size thumbnail. */
+
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -7,17 +9,32 @@ import { makeSrcSet } from '@/utils/img';
 import { optimizeRemoteImage } from '@/utils/optimizeRemoteImage';
 import { getVenueImage, handleImgErrorToPlaceholder } from '@/utils/venueImage';
 
+/** Intrinsic dimensions for the list thumbnail (prevents CLS). */
 const THUMB_W = 96;
 const THUMB_H = 64;
 
+/** Props for {@link BookingCard}. */
 type Props = {
+  /** Booking to display. */
   booking: Booking;
+  /** Called when user confirms cancellation. */
   onCancel?: (id: string) => void;
+  /** Opens a date-change dialog in the parent. */
   onChangeDates?: (b: Booking) => void;
+  /** When true, shows a loading state on the cancel button. */
   busy?: boolean;
 };
 
+/**
+ * BookingCard
+ *
+ * Renders a compact booking row with:
+ * - Fixed-size venue thumbnail (96×64) using intrinsic `width/height` + `srcSet/sizes` (no CLS).
+ * - Venue name, city, dates, and actions (change dates / cancel).
+ * - Whole row is a link when `venueId` is present.
+ */
 export default function BookingCard({ booking, onCancel, onChangeDates, busy = false }: Props) {
+  // Stable midnight boundary for "past" detection (computed once per mount)
   const todayMidnightMs = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -31,8 +48,13 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
   const venueId = booking.venue?.id;
   const venueName = booking.venue?.name ?? 'Venue';
 
-  // ✅ One source of truth for the thumbnail (handles placeholder automatically)
+  // One source of truth for the thumbnail (falls back to placeholder/map automatically)
   const { src, alt } = getVenueImage(booking.venue);
+
+  // Precompute optimized image values once per render
+  const optimizedSrc = optimizeRemoteImage(src, { width: THUMB_W, height: THUMB_H });
+  const thumbSrcSet = makeSrcSet(src, [96, 128, 160], (w) => Math.round(w * (THUMB_H / THUMB_W)));
+  const thumbSizes = '96px';
 
   return (
     <div
@@ -50,9 +72,9 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
         >
           <div className="h-16 w-24 overflow-hidden rounded border border-border shrink-0">
             <img
-              src={optimizeRemoteImage(src, { width: THUMB_W, height: THUMB_H })}
-              srcSet={makeSrcSet(src, [96, 128, 160], (w) => Math.round(w * (THUMB_H / THUMB_W)))}
-              sizes="96px"
+              src={optimizedSrc}
+              srcSet={thumbSrcSet}
+              sizes={thumbSizes}
               alt={alt}
               width={THUMB_W}
               height={THUMB_H}
@@ -79,7 +101,9 @@ export default function BookingCard({ booking, onCancel, onChangeDates, busy = f
         <>
           <div className="h-16 w-24 overflow-hidden rounded border border-border shrink-0">
             <img
-              src={src}
+              src={optimizedSrc}
+              srcSet={thumbSrcSet}
+              sizes={thumbSizes}
               alt={alt}
               width={THUMB_W}
               height={THUMB_H}

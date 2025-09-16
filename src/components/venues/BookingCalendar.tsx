@@ -1,3 +1,5 @@
+/** @file BookingCalendar – range calendar that blocks past/booked days and prevents overlapping selections. */
+
 import { useMemo, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { DayPicker } from 'react-day-picker';
@@ -9,24 +11,41 @@ import { bookingsToDisabledRanges } from '@/utils/bookings';
 import 'react-day-picker/dist/style.css';
 
 type Props = {
+  /** Existing bookings used to disable/mark unavailable dates. */
   bookings: BookingRangeLike[];
+  /** The currently selected date range. */
   selected: DateRange | undefined;
+  /** Called when the selection changes (or is cleared on conflict). */
   onSelect: (range: DateRange | undefined) => void;
+  /** Number of calendar months to render side-by-side (default: 2). */
   numberOfMonths?: number;
 };
 
+/**
+ * Check whether a selected date range overlaps any booked intervals.
+ * @remarks The checkout day is treated as free (exclusive), so we compare
+ *          `[from, to - 1 day]` against booked intervals using inclusive bounds.
+ * @param range Selected date range
+ * @param booked Normalized booked intervals as `{ from: Date; to: Date }[]`
+ * @returns `true` if any overlap exists, otherwise `false`
+ */
 function overlapsBooked(range: DateRange, booked: { from: Date; to: Date }[]) {
   if (!range?.from || !range?.to) return false;
 
-  // Treat checkout day as free
   const sel = { start: range.from, end: addDays(range.to, -1) };
-
-  // Convert booked intervals to { start, end } for date-fns
   return booked.some((b) =>
     areIntervalsOverlapping(sel, { start: b.from, end: b.to }, { inclusive: true }),
   );
 }
 
+/**
+ * BookingCalendar
+ *
+ * Renders a range picker that:
+ * - Disables past days and booked intervals.
+ * - Prevents selecting ranges that overlap existing bookings.
+ * - Emits `undefined` and shows a conflict message when an invalid range is picked.
+ */
 export default function BookingCalendar({
   bookings,
   selected,
@@ -36,7 +55,7 @@ export default function BookingCalendar({
   const bookedIntervals = useMemo(() => bookingsToDisabledRanges(bookings), [bookings]);
 
   const disabled = useMemo(() => {
-    const today = startOfToday(); // keep inside memo to avoid dep warning
+    const today = startOfToday();
     return [{ before: today }, ...bookedIntervals];
   }, [bookedIntervals]);
 
@@ -62,7 +81,6 @@ export default function BookingCalendar({
         disabled={disabled}
         showOutsideDays
         weekStartsOn={1}
-        // Make disabled days (past + booked) look the same:
         classNames={{
           day_disabled:
             'bg-[rgb(var(--fg))/0.06] text-[rgb(var(--fg))/0.55] line-through cursor-not-allowed',

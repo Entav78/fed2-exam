@@ -1,3 +1,5 @@
+/** @file MyVenuesList – shows the current user's venues with a compact row card and a "show all" toggle. */
+
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
@@ -8,13 +10,25 @@ import { useAuthStore } from '@/store/authStore';
 
 import NewVenueTile from '../venues/NewVenueTile';
 
+/**
+ * MyVenuesList
+ *
+ * Loads venues owned by the current user (with bookings for context),
+ * renders a compact row list, and toggles between a limited preview and all items.
+ *
+ * Perf:
+ *  - While loading, renders a skeleton list that approximates the final card height
+ *    so the layout remains stable (no CLS) when data arrives.
+ */
 export default function MyVenuesList() {
   const user = useAuthStore((s) => s.user);
+
   const [rows, setRows] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
 
+  // Initial fetch (includes bookings for each venue)
   useEffect(() => {
     if (!user?.name) return;
     (async () => {
@@ -35,6 +49,8 @@ export default function MyVenuesList() {
   }, [user?.name]);
 
   if (!user?.name) return null;
+
+  // Loading skeleton (same general footprint as final list to prevent layout jumps)
   if (loading) {
     return (
       <>

@@ -1,8 +1,16 @@
+/** @file Footer – site-wide footer with the current year and brand name. */
+
+/**
+ * Footer
+ *
+ * Renders a page footer with the current year and brand text.
+ * Uses the header color variables for visual consistency.
+ */
 const Footer = () => {
   const year = new Date().getFullYear();
+
   return (
     <footer
-      role="contentinfo"
       className="
         bg-[rgb(var(--header-bg))] text-[rgb(var(--header-fg))]
         border-t border-[rgb(var(--header-fg))/15]
@@ -14,4 +22,5 @@ const Footer = () => {
     </footer>
   );
 };
+
 export default Footer;

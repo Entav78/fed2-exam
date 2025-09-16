@@ -1,3 +1,5 @@
+/** @file MyBookingsList – shows upcoming bookings with a compact row card and edit/cancel actions. */
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
@@ -7,10 +9,21 @@ import ChangeBookingDialog from '@/components/bookings/ChangeBookingDialog';
 import { type Booking, deleteBooking, getMyBookings } from '@/lib/api/bookings';
 import { useAuthStore } from '@/store/authStore';
 
+/** Sort helper: earlier start date first. */
 function byStartAsc(a: Booking, b: Booking) {
   return new Date(a.dateFrom).getTime() - new Date(b.dateFrom).getTime();
 }
 
+/**
+ * MyBookingsList
+ *
+ * Loads the current user's bookings (with venue data), filters out past items,
+ * shows up to LIMIT upcoming bookings, and supports cancel/change-dates.
+ *
+ * Perf:
+ *  - Renders a same-height skeleton while loading to avoid layout shifts.
+ *  - Thumbnails inside BookingCard reserve space (intrinsic size) and lazy-load.
+ */
 export default function MyBookingsList() {
   const user = useAuthStore((s) => s.user);
   const [rows, setRows] = useState<Booking[]>([]);
@@ -18,17 +31,19 @@ export default function MyBookingsList() {
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  // NEW: dialog state
+  // Dialog state for changing a booking
   const [editBooking, setEditBooking] = useState<Booking | null>(null);
   const openChange = (b: Booking) => setEditBooking(b);
   const closeChange = () => setEditBooking(null);
 
+  /** Fetch the current user's bookings, sorted ascending by start date. */
   const fetchMine = useCallback(async () => {
     if (!user?.name) return;
     const data = await getMyBookings(user.name, true); // _venue=true
     setRows([...data].sort(byStartAsc));
   }, [user?.name]);
 
+  /** Initial load with race-safety. */
   useEffect(() => {
     let active = true;
     (async () => {
@@ -49,13 +64,14 @@ export default function MyBookingsList() {
 
   const LIMIT = 4;
 
-  // Stable local-midnight boundary (only computed once per mount)
+  /** Stable local-midnight boundary (computed once per mount). */
   const todayMidnightMs = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d.getTime();
   }, []);
 
+  /** Upcoming bookings only (end date after today), sorted soonest first. */
   const upcomingOnly = useMemo(
     () =>
       rows
@@ -64,22 +80,22 @@ export default function MyBookingsList() {
     [rows, todayMidnightMs],
   );
 
+  /** The limited slice shown on the profile preview. */
   const visible = useMemo(() => upcomingOnly.slice(0, LIMIT), [upcomingOnly]);
 
-  // Optional clearer empty state
-  if (!upcomingOnly.length) {
-    return <p className="text-sm text-muted">No upcoming bookings.</p>;
-  }
-
+  /**
+   * Cancel a booking with optimistic UI + rollback on failure.
+   * @param id Booking id to cancel
+   */
   async function cancel(id: string) {
     if (!confirm('Are you sure you want to cancel this booking?')) return;
     const prev = rows;
     setBusyId(id);
-    setRows((r) => r.filter((b) => b.id !== id)); // optimistic
+    setRows((r) => r.filter((b) => b.id !== id)); // optimistic remove
     try {
       await deleteBooking(id);
       toast.success('Booking cancelled');
-      await fetchMine(); // keep in sync
+      await fetchMine(); // keep in sync after server write
     } catch (e) {
       setRows(prev); // rollback
       toast.error(e instanceof Error ? e.message : 'Could not cancel booking');
@@ -87,6 +103,8 @@ export default function MyBookingsList() {
       setBusyId(null);
     }
   }
+
+  // --- Render states (loading → error → empty → list) ---
 
   if (loading) {
     return (
@@ -119,7 +137,7 @@ export default function MyBookingsList() {
             <BookingCard
               booking={b}
               onCancel={cancel}
-              onChangeDates={openChange} // ✅ opens dialog
+              onChangeDates={openChange}
               busy={busyId === b.id}
             />
           </li>
@@ -143,7 +161,7 @@ export default function MyBookingsList() {
           booking={editBooking}
           venueId={editBooking.venue.id}
           onClose={closeChange}
-          onUpdated={fetchMine} // refresh preview after change
+          onUpdated={fetchMine}
         />
       )}
     </>

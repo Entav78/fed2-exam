@@ -1,3 +1,5 @@
+/** @file VenueGallery – 16:9 hero image with thumbnail selector, optimized for CLS and LCP. */
+
 import { useMemo, useState } from 'react';
 
 import { useGeocodedStaticMap } from '@/hooks/useGeocodedStaticMap';
@@ -7,25 +9,36 @@ import { optimizeRemoteImage } from '@/utils/optimizeRemoteImage';
 import { handleImgErrorToPlaceholder } from '@/utils/venueImage';
 
 type Props = {
+  /** Venue fields used for media + fallback map. */
   venue: Pick<Venue, 'id' | 'name' | 'media' | 'location'>;
-  /** Make the *current* hero image high priority (used on first render) */
+  /**
+   * Make the current hero image high priority on first render
+   * (eager, `fetchPriority="high"`, `decoding="sync"`).
+   */
   priority?: boolean;
 };
 
+/**
+ * VenueGallery
+ *
+ * Displays a 16:9 hero image with optional thumbnails:
+ * - If no media is provided, falls back to a geocoded static map (or SVG placeholder).
+ * - Uses intrinsic `width/height` + inline `aspect-ratio` to avoid CLS.
+ * - Generates responsive `srcSet/sizes` for CDN photos (Unsplash/Pexels) and
+ *   applies lightweight CDN params via `optimizeRemoteImage`.
+ * - Only the first visible hero image is treated as high priority when `priority` is true.
+ */
 export default function VenueGallery({ venue, priority = false }: Props) {
-  // 16:9 hero
   const HERO_W = 1200;
   const HERO_H = 675;
   const HERO_RATIO = HERO_H / HERO_W;
 
-  // Geocoded static map (prod only). If geocode fails, this becomes SVG placeholder.
   const { src: geoSrc, alt: geoAlt } = useGeocodedStaticMap(venue, 0, {
     width: HERO_W,
     height: HERO_H,
     zoom: 13,
   });
 
-  // Normalize media; if none, fall back to the geocoded static map (or SVG if geocode fails)
   const normalized = useMemo(() => {
     const items =
       (venue.media ?? [])
@@ -39,21 +52,20 @@ export default function VenueGallery({ venue, priority = false }: Props) {
   const [active, setActive] = useState(0);
   const current = normalized[Math.min(active, normalized.length - 1)];
 
-  // 🧠 Responsive hero image bits
   const isCdnPhoto = /images\.(unsplash|pexels)\.com|unsplash\.com|pexels\.com/i.test(current.url);
   const heroWidths = [480, 640, 768, 960, 1200];
   const heroSrcSet = isCdnPhoto
     ? makeSrcSet(current.url, heroWidths, (w) => Math.round(w * HERO_RATIO))
     : undefined;
   const heroSrc = optimizeRemoteImage(current.url, { width: HERO_W, height: HERO_H });
-  const heroSizes = '100vw'; // it fills the container width
-  const heroPriority = priority && active === 0; // only the first visible hero gets eager/high
+  const heroSizes = '100vw';
+  const heroPriority = priority && active === 0;
 
   return (
     <div>
       <div
         className="w-full overflow-hidden rounded-lg bg-border-light"
-        style={{ aspectRatio: '16 / 9' }} // <-- reserves height immediately
+        style={{ aspectRatio: '16 / 9' }}
       >
         <img
           src={heroSrc}

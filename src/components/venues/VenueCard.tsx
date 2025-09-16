@@ -1,3 +1,5 @@
+/** @file VenueCard – venue preview card for grid and row layouts with responsive, optimized images. */
+
 import { Link } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
@@ -7,18 +9,30 @@ import { makeSrcSet } from '@/utils/img';
 import { optimizeRemoteImage } from '@/utils/optimizeRemoteImage';
 import { handleImgErrorToMapThenPlaceholder } from '@/utils/venueImage';
 
+/** Intrinsic thumb size for the row layout (px). */
 const ROW_W = 96;
 const ROW_H = 64;
 
+/** Props for {@link VenueCard}. */
 type Props = {
+  /** Venue data to render. */
   venue: Venue;
+  /** Layout style: `"grid"` (default) or `"row"`. */
   layout?: 'grid' | 'row';
+  /** Whether to show the Manage button (manager view). */
   showManage?: boolean;
+  /** Custom href for Manage (defaults to `/manage/:id`). */
   manageHref?: string;
+  /** Extra class names for the root card. */
   className?: string;
+  /**
+   * If true, mark the image as high priority (eager + fetchPriority=high).
+   * Useful for the first card in a list or LCP candidates.
+   */
   priority?: boolean;
 };
 
+/** NOK currency formatter (no decimals). */
 const nok = new Intl.NumberFormat('no-NO', {
   style: 'currency',
   currency: 'NOK',
@@ -26,6 +40,18 @@ const nok = new Intl.NumberFormat('no-NO', {
   maximumFractionDigits: 0,
 });
 
+/**
+ * VenueCard
+ *
+ * Renders a venue in either:
+ * - **grid**: big image, stacked details
+ * - **row**: compact thumbnail + inline details + actions
+ *
+ * @remarks
+ * - Images: row uses a fixed 96×64 thumb (prevents CLS); grid uses responsive `sizes/srcSet`.
+ * - `optimizeRemoteImage` adds CDN params (e.g., Unsplash/Pexels) for smaller payloads.
+ * - If the venue photo fails, it falls back to a static map, then a placeholder.
+ */
 export default function VenueCard({
   venue,
   layout = 'grid',
@@ -58,7 +84,6 @@ export default function VenueCard({
   const srcOptimized = optimizeRemoteImage(src, {
     width: imgOpts.width,
     height: imgOpts.height,
-    // dpr & quality default sensibly; you can pass them explicitly if you want
   });
 
   if (isRow) {

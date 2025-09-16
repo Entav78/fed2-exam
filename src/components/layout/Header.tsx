@@ -1,3 +1,5 @@
+/** @file Header – sticky responsive site header with primary nav and auth controls. */
+
 import { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 
@@ -5,9 +7,23 @@ import LogoutButton from '@/components/auth/LogoutButton';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import { useAuthStore } from '@/store/authStore';
 
+/**
+ * Utility to style a NavLink based on its active state.
+ * NavLink also handles `aria-current="page"` automatically.
+ */
 const link = ({ isActive }: { isActive: boolean }) =>
   `px-2 py-1 rounded ${isActive ? 'underline' : 'hover:underline'}`;
 
+/**
+ * Header
+ *
+ * - Left: brand link
+ * - Right (desktop): primary nav + auth actions
+ * - Mobile: hamburger toggles a full-screen drawer
+ *
+ * Behavior:
+ * - Locks body scroll when the mobile menu is open.
+ */
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -18,6 +34,7 @@ export default function Header() {
   const displayName = currentUser?.name ?? '';
   const alertCount = 0;
 
+  /** Prevent background scroll when the mobile menu is open. */
   useEffect(() => {
     document.body.classList.toggle('overflow-hidden', menuOpen);
     return () => document.body.classList.remove('overflow-hidden');
@@ -28,14 +45,13 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-[rgb(var(--header-bg))] text-[rgb(var(--header-fg))]">
       <div className="container flex items-center py-3">
-        {/* Brand (left) */}
         <Link to="/" className="text-lg font-bold">
           Holidaze
         </Link>
 
-        {/* Right side (nav + auth) */}
+        {/* Desktop nav + auth */}
         <div className="hidden sm:flex items-center gap-6 ml-auto">
-          <nav className="flex items-center gap-6 text-lg font-medium">
+          <nav className="flex items-center gap-6 text-lg font-medium" aria-label="Primary">
             <NavLink to="/" className={link}>
               Home
             </NavLink>
@@ -52,7 +68,6 @@ export default function Header() {
             )}
           </nav>
 
-          {/* Auth actions (optional keep here so they’re also right-aligned) */}
           {!isLoggedIn ? (
             <>
               <NavLink to="/login" className={link}>
@@ -67,17 +82,20 @@ export default function Header() {
           )}
         </div>
 
-        {/* Hamburger (mobile) */}
+        {/* Mobile hamburger */}
         <button
+          type="button"
           className="sm:hidden relative ml-auto h-12 w-12 p-2"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
           aria-controls="mobile-menu"
         >
-          {/* open */}
+          {/* open icon */}
           <svg
-            className={`h-8 w-8 transform transition-all duration-300 ${menuOpen ? 'scale-75 opacity-0' : 'scale-125 opacity-100'}`}
+            className={`h-8 w-8 transform transition-all duration-300 ${
+              menuOpen ? 'scale-75 opacity-0' : 'scale-125 opacity-100'
+            }`}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -89,9 +107,11 @@ export default function Header() {
               d="M4 6h16M4 12h16M4 18h16"
             />
           </svg>
-          {/* close */}
+          {/* close icon */}
           <svg
-            className={`h-8 w-8 transform transition-all duration-300 ${menuOpen ? 'scale-125 opacity-100' : 'scale-90 opacity-0'}`}
+            className={`h-8 w-8 transform transition-all duration-300 ${
+              menuOpen ? 'scale-125 opacity-100' : 'scale-90 opacity-0'
+            }`}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -131,10 +151,12 @@ export default function Header() {
         </div>
       )}
 
+      {/* Separator */}
       <div className="hidden sm:block">
         <div className="container h-px w-full bg-[rgb(var(--header-fg))/35]" />
         <div className="h-px bg-[rgb(var(--header-fg))/12]" />
       </div>
+
       {/* Mobile drawer */}
       <div
         id="mobile-menu"
@@ -146,7 +168,7 @@ export default function Header() {
         <div className="flex items-center justify-between border-b border-[rgb(var(--header-fg))/30] px-4 pb-4 pt-6">
           <span className="text-lg font-semibold">Menu</span>
           <div className="flex items-center gap-3">
-            <button onClick={() => setMenuOpen(false)} aria-label="Close menu">
+            <button type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu">
               <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path
                   strokeLinecap="round"
@@ -213,7 +235,6 @@ export default function Header() {
             </li>
           )}
 
-          {/* separator must also be an <li> */}
           <li
             role="separator"
             aria-hidden="true"

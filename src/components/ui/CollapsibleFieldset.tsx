@@ -1,12 +1,27 @@
+/** @file CollapsibleFieldset – lightweight collapsible section using native <details>/<summary>. */
+
 import type { PropsWithChildren, ReactNode } from 'react';
 
+/**
+ * Props for {@link CollapsibleFieldset}.
+ */
 type Props = {
+  /** Section title shown in the summary row. */
   title: string;
-  preview?: ReactNode; // optional thumbnail shown inside the summary
+  /** Optional preview node (e.g., a thumbnail) displayed before the title. */
+  preview?: ReactNode;
+  /** Whether the fieldset is open by default. */
   defaultOpen?: boolean;
+  /** Extra classes for the outer container. */
   className?: string;
 };
 
+/**
+ * CollapsibleFieldset
+ *
+ * A simple container that reveals its children when expanded.
+ * @remarks Uses native `<details>/<summary>` for built-in semantics and keyboard support.
+ */
 export default function CollapsibleFieldset({
   title,
   preview,
@@ -22,7 +37,6 @@ export default function CollapsibleFieldset({
       <summary className="list-none cursor-pointer select-none flex items-center gap-3 p-3 hover:bg-[rgb(var(--fg))/0.04]">
         {preview}
         <span className="font-medium flex-1">{title}</span>
-        {/* chevron */}
         <svg
           className="h-4 w-4 transition-transform group-open:rotate-180 opacity-70"
           viewBox="0 0 20 20"

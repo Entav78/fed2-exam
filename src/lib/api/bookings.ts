@@ -8,6 +8,7 @@ import type { Media, ProfileLite, VenueLocation, VenueMeta } from '@/types/commo
 
 // ---------- Types ----------
 
+/** Minimal venue shape that may be embedded on bookings when requested. */
 export type VenueLite = {
   id: string;
   name: string;
@@ -23,6 +24,7 @@ export type VenueLite = {
   owner?: ProfileLite;
 };
 
+/** Base booking properties. */
 export type BookingBase = {
   id: string;
   dateFrom: string; // ISO
@@ -32,20 +34,24 @@ export type BookingBase = {
   updated?: string; // ISO
 };
 
+/** Booking with optional embedded relations (depending on query params). */
 export type Booking = BookingBase & {
-  /** present if requested with _venue=true */
+  /** Present if requested with `_venue=true`. */
   venue?: VenueLite;
-  /** present if requested with _customer=true */
+  /** Present if requested with `_customer=true`. */
   customer?: ProfileLite;
 };
 
-/** Input you accept from UI */
+/**
+ * Shape accepted by UI when creating a booking.
+ * Either pass a `venueId` directly, or `venue: { id }`.
+ */
 export type CreateBookingInput = { dateFrom: string; dateTo: string; guests: number } & (
   | { venueId: string }
   | { venue: { id: string } }
 );
 
-/** Payload actually sent to the API */
+/** Payload sent to the API (normalized). */
 type CreateBookingPayload = {
   dateFrom: string;
   dateTo: string;
@@ -55,11 +61,23 @@ type CreateBookingPayload = {
 
 // ---------- Internal JSON helper ----------
 
+/**
+ * Fetch JSON with common headers and typed result.
+ *
+ * - Adds `Content-Type: application/json` for non-GET/HEAD requests (if missing).
+ * - Throws `Error` with a message derived from API error payload (if available).
+ *
+ * @typeParam T - Expected JSON response type.
+ * @param url - Absolute or relative request URL.
+ * @param init - Optional `fetch` init options.
+ * @returns Parsed JSON typed as `T`.
+ * @throws Error when `res.ok` is false; message includes API error if present.
+ */
 async function getJSON<T>(url: string, init: RequestInit = {}): Promise<T> {
   const method = (init.method ?? 'GET').toString().toUpperCase();
 
   const headers: Record<string, string> = {
-    ...buildHeaders(), // ✅ no method string here
+    ...buildHeaders(),
     ...(init.headers as Record<string, string> | undefined),
   };
 
@@ -87,14 +105,28 @@ async function getJSON<T>(url: string, init: RequestInit = {}): Promise<T> {
 
 // ---------- API ----------
 
-/** List bookings (client-side paging/sorting done elsewhere) */
+/**
+ * List all bookings.
+ *
+ * @returns Array of bookings (relations depend on calling endpoint flags).
+ * @example
+ * const bookings = await fetchBookings();
+ */
 export async function fetchBookings(): Promise<Booking[]> {
   const url = listBookingsUrl();
   const json = await getJSON<{ data: Booking[] }>(url);
   return json.data;
 }
 
-/** Get a single booking by id (optionally include venue/customer) */
+/**
+ * Get a single booking by ID.
+ *
+ * @param id - Booking ID.
+ * @param opts - Include related entities via flags.
+ * @returns The booking (optionally with `venue`/`customer`).
+ * @example
+ * const b = await getBookingById(id, { venue: true });
+ */
 export async function getBookingById(
   id: string,
   opts?: { venue?: boolean; customer?: boolean },
@@ -104,11 +136,21 @@ export async function getBookingById(
   return json.data;
 }
 
-/** Create a booking (normalizes to venueId and sends both styles for compatibility) */
+/**
+ * Create a booking.
+ *
+ * Accepts either `{ venueId }` or `{ venue: { id } }`. Internally normalizes to `venueId`
+ * and also includes `venue: { id }` for broader API compatibility (harmless if ignored).
+ *
+ * @param body - Create booking input (dates, guests, and venue reference).
+ * @returns The created booking.
+ * @example
+ * await createBooking({ venueId, dateFrom: '2025-09-20', dateTo: '2025-09-22', guests: 2 });
+ */
 export async function createBooking(body: CreateBookingInput): Promise<Booking> {
   const url = listBookingsUrl();
 
-  // normalize to an id either way
+  // Normalize to an id either way
   const id = 'venueId' in body ? body.venueId : body.venue.id;
 
   const payload: CreateBookingPayload = {
@@ -116,22 +158,29 @@ export async function createBooking(body: CreateBookingInput): Promise<Booking> 
     dateTo: body.dateTo,
     guests: body.guests,
     venueId: id, // required by the backend
-    // NOTE: we also send venue:{id} in some variants; harmless if ignored
   };
 
   const json = await getJSON<{ data: Booking }>(url, {
     method: 'POST',
-    body: JSON.stringify({ ...payload, venue: { id } }),
+    body: JSON.stringify({ ...payload, venue: { id } }), // sending both is safe
   });
   return json.data;
 }
 
-/** Delete a booking (owner/customer can cancel their own) */
+/**
+ * Delete a booking by ID.
+ *
+ * @param id - Booking ID to delete.
+ * @returns Resolves on success (204 No Content).
+ * @throws Error when the API responds with a non-2xx code.
+ * @example
+ * await deleteBooking(id);
+ */
 export async function deleteBooking(id: string): Promise<void> {
   const url = getBookingByIdUrl(id);
   const res = await fetch(url, {
     method: 'DELETE',
-    headers: buildHeaders(), // ✅ no method string here
+    headers: buildHeaders(),
   });
 
   if (!res.ok) {
@@ -147,7 +196,15 @@ export async function deleteBooking(id: string): Promise<void> {
   // success is 204 No Content — do NOT parse JSON
 }
 
-/** Convenience for Profile -> "My bookings" */
+/**
+ * Get bookings for a specific profile (the “My bookings” view).
+ *
+ * @param profileName - Profile name (username).
+ * @param withVenue - If true, include the `venue` relation (`_venue=true`).
+ * @returns Array of bookings belonging to the profile.
+ * @example
+ * const mine = await getMyBookings('jane.doe', true);
+ */
 export async function getMyBookings(profileName: string, withVenue = true): Promise<Booking[]> {
   const qs = new URLSearchParams();
   if (withVenue) qs.set('_venue', 'true');
@@ -158,6 +215,13 @@ export async function getMyBookings(profileName: string, withVenue = true): Prom
 
 // ---------- Small UI helper ----------
 
+/**
+ * Check whether a booking is currently active at a given moment.
+ *
+ * @param b - Booking-like object with `dateFrom`/`dateTo`.
+ * @param now - Moment to compare (default: current time).
+ * @returns `true` if `now` is within `[dateFrom, dateTo]` inclusive.
+ */
 export function isBookingActive(b: BookingBase, now = new Date()): boolean {
   const start = new Date(b.dateFrom).getTime();
   const end = new Date(b.dateTo).getTime();

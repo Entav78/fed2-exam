@@ -1,3 +1,5 @@
+/** @file ProfileMediaEditor – preview and update a user's banner and avatar media. */
+
 import { type ReactNode, useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -7,11 +9,16 @@ import { useAuthStore } from '@/store/authStore';
 import { makeSrcSet } from '@/utils/img';
 import { optimizeRemoteImage } from '@/utils/optimizeRemoteImage';
 
+/** Intrinsic banner width (px). */
 const COVER_W = 1200;
+/** Intrinsic banner height (px). */
 const COVER_H = 400;
+/** Intrinsic avatar width (px). */
 const AVATAR_W = 96;
+/** Intrinsic avatar height (px). */
 const AVATAR_H = 96;
 
+/** Local form state for media fields. */
 type Form = {
   avatarUrl: string;
   avatarAlt: string;
@@ -19,6 +26,12 @@ type Form = {
   bannerAlt: string;
 };
 
+/**
+ * Collapsible panel used for the banner/avatar editors.
+ * @param label Section label (e.g., "Banner" or "Avatar")
+ * @param children Form controls to render inside the panel
+ * @param defaultOpen Whether the panel starts open
+ */
 function Collapsible({
   label,
   children,
@@ -61,6 +74,14 @@ function Collapsible({
   );
 }
 
+/**
+ * ProfileMediaEditor
+ *
+ * - Shows live previews of the banner (LCP on this route) and avatar.
+ * - Validates absolute http(s) URLs before save.
+ * - Persists via `updateProfileMedia` and mirrors changes into the auth store.
+ * - Uses intrinsic `width/height` and responsive `srcSet/sizes` for the banner.
+ */
 export default function ProfileMediaEditor() {
   const user = useAuthStore((s) => s.user);
   const isManager = useAuthStore((s) => s.isManager());
@@ -78,11 +99,13 @@ export default function ProfileMediaEditor() {
 
   if (!user) return null;
 
+  /** Input change handler factory for the form fields. */
   const on = (key: keyof Form) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = ((e.target as HTMLInputElement | null)?.value ?? '').toString();
     setForm((s) => ({ ...s, [key]: val }));
   };
 
+  /** Persist avatar/banner URLs and alt text to the profile, mirroring to the auth store. */
   async function save() {
     const name = user?.name;
     if (!name) {
@@ -115,7 +138,6 @@ export default function ProfileMediaEditor() {
     try {
       const updated = await updateProfileMedia(name, body);
 
-      // mirror into auth store so header updates
       useAuthStore.setState((s) =>
         s.user
           ? {
@@ -145,10 +167,9 @@ export default function ProfileMediaEditor() {
     <section className="rounded border border-border bg-card p-4">
       <h2 className="mb-3 text-lg font-semibold">Profile images</h2>
 
-      {/* Always-visible banner preview */}
       <div
         className="overflow-hidden rounded border border-border"
-        style={{ aspectRatio: '3 / 1' }} // <- inline, prevents CSS-timing CLS
+        style={{ aspectRatio: '3 / 1' }}
       >
         <div className="relative h-full w-full">
           {form.bannerUrl ? (
@@ -174,7 +195,6 @@ export default function ProfileMediaEditor() {
         </div>
       </div>
 
-      {/* Collapsible edit controls for banner */}
       <Collapsible label="Banner" defaultOpen={!form.bannerUrl}>
         <div className="sm:col-span-2">
           <label htmlFor="bannerUrl" className="form-label">
@@ -201,8 +221,6 @@ export default function ProfileMediaEditor() {
           />
         </div>
       </Collapsible>
-
-      {/* Always-visible avatar preview */}
 
       <div className="mt-6 flex items-center gap-4">
         <div className="h-24 w-24 overflow-hidden rounded-full border border-border">
@@ -240,7 +258,6 @@ export default function ProfileMediaEditor() {
         </div>
       </div>
 
-      {/* Collapsible edit controls for avatar */}
       <Collapsible label="Avatar" defaultOpen={!form.avatarUrl}>
         <div className="sm:col-span-2">
           <label htmlFor="avatarUrl" className="form-label">
@@ -269,7 +286,6 @@ export default function ProfileMediaEditor() {
         <p className="text-sm text-muted">Tip: square images look best for avatars.</p>
       </Collapsible>
 
-      {/* Actions */}
       <div className="mt-4 flex justify-end gap-2">
         <Button
           variant={canSave ? 'primary' : 'outline'}

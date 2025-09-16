@@ -1,16 +1,28 @@
-// src/lib/geocode.ts
+/** @file geocode – tiny client-side geocoding helper + cache for venue locations. */
+
 import type { VenueLocation } from '@/types/common';
 
-// What we return from geocoders and the cache
-export type GeocodeHit = { lat: number; lng: number; label?: string };
+/** What we return from geocoders and the cache. */
+export type GeocodeHit = {
+  /** Latitude in decimal degrees. */
+  lat: number;
+  /** Longitude in decimal degrees. */
+  lng: number;
+  /** Optional human-friendly label (e.g., "Oslo, Norway"). */
+  label?: string;
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/** Local cache TTL for geocode results (7 days). */
 const GEO_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+/** Narrowing helper: non-empty string. */
 const isString = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0;
 
+/** Parse a number from unknown (accepts numeric strings). */
 const toNum = (v: unknown): number | undefined => {
   if (typeof v === 'number') return Number.isFinite(v) ? v : undefined;
   if (typeof v === 'string') {
@@ -20,11 +32,18 @@ const toNum = (v: unknown): number | undefined => {
   return undefined;
 };
 
+/** Normalize a query for hashing/caching. */
 const normalize = (q: string) => q.trim().replace(/\s+/g, ' ');
+
+/** Cache key for a query. */
 const keyFor = (q: string) => `geocode:${normalize(q).toLowerCase()}`;
 
 type CacheShape = { v: unknown; t: number };
 
+/**
+ * Read and validate a cached geocode entry from localStorage.
+ * Returns `null` on any shape/version/TTL mismatch.
+ */
 function readCache(key: string): GeocodeHit | null {
   const raw = localStorage.getItem(key);
   if (!raw) return null;
@@ -51,11 +70,15 @@ function readCache(key: string): GeocodeHit | null {
   }
 }
 
+/** Write a geocode hit to localStorage with a timestamp. */
 function writeCache(key: string, v: GeocodeHit) {
   localStorage.setItem(key, JSON.stringify({ v, t: Date.now() }));
 }
 
-// Safely read Geoapify's first feature properties from unknown JSON
+/**
+ * Safely extract the first feature's `properties` object from a Geoapify response.
+ * Works against `unknown` without assuming the server shape.
+ */
 function firstFeatureProps(json: unknown): Record<string, unknown> | null {
   if (!json || typeof json !== 'object') return null;
   const features = (json as { features?: unknown }).features;
@@ -73,7 +96,11 @@ function firstFeatureProps(json: unknown): Record<string, unknown> | null {
 
 /**
  * Geocode a freeform address string via Geoapify.
- * Caches results in localStorage using a normalized key.
+ * - Uses a 7-day localStorage cache keyed by a normalized, lowercase query.
+ * - Returns `null` on network errors or low-quality inputs.
+ *
+ * @param q - Freeform query (e.g., `"Karl Johans gate 1, Oslo, Norway"`).
+ * @returns A {@link GeocodeHit} or `null`.
  */
 export async function geocodeAddress(q: string): Promise<GeocodeHit | null> {
   const API_KEY = import.meta.env.VITE_GEOAPIFY_KEY as string | undefined;
@@ -128,7 +155,13 @@ export async function geocodeAddress(q: string): Promise<GeocodeHit | null> {
 }
 
 /**
- * Try several structured variants: "address, city, country" → "city, country" → "country".
+ * Try several structured variants in order until one geocodes:
+ * 1. `"address, city, country"`
+ * 2. `"city, country"`
+ * 3. `"country"`
+ *
+ * @param loc - Venue location fields from the API.
+ * @returns A {@link GeocodeHit} or `null` if none of the variants work.
  */
 export async function geocodeFromLocation(loc?: VenueLocation): Promise<GeocodeHit | null> {
   if (!loc) return null;
@@ -150,8 +183,10 @@ export async function geocodeFromLocation(loc?: VenueLocation): Promise<GeocodeH
 }
 
 /**
- * Read a cached geocode (if present) for a venue's {address, city, country}
- * without doing any network request.
+ * Read a cached geocode (if present) for `{address, city, country}` without network requests.
+ *
+ * @param loc - Venue location.
+ * @returns A cached {@link GeocodeHit} or `null` if absent/expired/invalid.
  */
 export function getCachedForLocation(loc?: VenueLocation): GeocodeHit | null {
   if (!loc) return null;

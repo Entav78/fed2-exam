@@ -1,3 +1,5 @@
+/** @file ChangeBookingDialog – modal to edit a booking's dates/guests with availability checks. */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import toast from 'react-hot-toast';
@@ -10,14 +12,24 @@ import { getVenueById, type Venue } from '@/lib/api/venues';
 import { dateOnly } from '@/utils/date';
 
 type Props = {
+  /** The booking being edited. */
   booking: Booking;
+  /** Venue id for availability and constraints. */
   venueId: string;
+  /** Called when the dialog should close. */
   onClose: () => void;
+  /** Optional callback after a successful update (e.g., to refresh parent lists). */
   onUpdated?: () => void;
 };
 
+/**
+ * A modal dialog that lets users change a booking's date range and guests.
+ * Loads the venue with its bookings, ignores the current booking when
+ * checking overlap, and replaces the booking with a new one on save.
+ */
 export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdated }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
+
   const [venue, setVenue] = useState<Venue | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -29,16 +41,18 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
     to: new Date(booking.dateTo),
   }));
 
-  const handleSelect = (r: DateRange | undefined) => {
-    // optional nicety: normalize reversed clicks (keeps UX tidy, no logic change)
+  /** Normalize reversed clicks; otherwise just set the selected range. */
+  function handleSelect(r: DateRange | undefined): void {
     if (r?.from && r?.to && r.to < r.from) setRange({ from: r.to, to: r.from });
     else setRange(r);
-  };
+  }
 
-  // a11y: trap focus inside dialog, close on ESC, restore focus on close
+  /** Trap focus in the panel, close on Escape, and restore focus on unmount. */
   useFocusTrap(panelRef, { active: true, onEscape: onClose, restoreFocus: true });
+
   const titleId = 'change-booking-title';
 
+  /** Fetch the venue with bookings used for overlap checks. */
   useEffect(() => {
     let active = true;
     (async () => {
@@ -59,9 +73,12 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
     };
   }, [venueId]);
 
-  // availability check (ignore the booking we’re editing)
+  /**
+   * Validate a proposed booking segment against venue rules and existing bookings.
+   * Ignores the booking currently being edited.
+   */
   const check = useCallback(
-    (from: Date, to: Date, g: number) => {
+    (from: Date, to: Date, g: number): boolean => {
       if (!venue) return false;
       if (g < 1 || g > venue.maxGuests) return false;
 
@@ -82,13 +99,18 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
     [venue, booking.id],
   );
 
+  /** Whether the current selection is a valid, available booking. */
   const canBook = useMemo(() => {
     if (!venue) return false;
     if (!range?.from || !range?.to) return false;
     return check(range.from, range.to, guests);
   }, [venue, range, guests, check]);
 
-  async function save() {
+  /**
+   * Persist changes by deleting the original booking and creating a new one
+   * with the selected dates and guest count.
+   */
+  async function save(): Promise<void> {
     if (!venue || !range?.from || !range?.to || !canBook) return;
 
     setBusy(true);
@@ -110,6 +132,7 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
     }
   }
 
+  /** Minimal booking list for the calendar to mark unavailable ranges. */
   const bookingsLite = useMemo(
     () =>
       (venue?.bookings ?? [])
@@ -118,6 +141,7 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
     [venue?.bookings, booking.id],
   );
 
+  /** Number of nights in the current selection (min 1 when both dates set). */
   const nights =
     range?.from && range?.to ? Math.max(1, Math.round((+range.to - +range.from) / 86400000)) : 0;
 
@@ -129,7 +153,7 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
       aria-labelledby={titleId}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
-      }} // overlay click closes
+      }}
     >
       <div
         ref={panelRef}
@@ -157,7 +181,6 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
 
             <BookingCalendar bookings={bookingsLite} selected={range} onSelect={handleSelect} />
 
-            {/* Action bar */}
             <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-muted" aria-live="polite">
                 {range?.from && range?.to
@@ -166,7 +189,6 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
               </div>
 
               <div className="flex items-center gap-2">
-                {/* was a raw <button> with border classes */}
                 <Button
                   type="button"
                   variant="outline"
@@ -178,7 +200,6 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
                   <span className="ml-1">Clear dates</span>
                 </Button>
 
-                {/* was variant="form" */}
                 <Button
                   onClick={save}
                   disabled={busy || !range?.from || !range?.to || !canBook}
@@ -191,7 +212,6 @@ export default function ChangeBookingDialog({ booking, venueId, onClose, onUpdat
               </div>
             </div>
 
-            {/* Guests input */}
             <div className="mt-3 flex items-center gap-3">
               <label className="text-sm">
                 Guests
