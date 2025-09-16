@@ -112,6 +112,15 @@ src/
 
 ---
 
+## Docs & Links
+
+- **Live app:** https://fed2-exam.netlify.app/
+- **Repository:** https://github.com/Entav78/fed2-exam
+- **Kanban board:** https://github.com/users/Entav78/projects/11/views/1
+- **Roadmap (Gantt):** https://github.com/users/Entav78/projects/11/views/4
+
+---
+
 ## License
 
 MIT © Hilde-Kathrine Ljosland Vatne
