@@ -1,4 +1,33 @@
-/* Default – light/brown */
+/* ==========================================================================
+   themes.css – design tokens & themes
+   --------------------------------------------------------------------------
+   Usage:
+   - Each theme sets CSS custom properties (RGB triplets) on :root or
+     :root[data-theme="…"]. Components consume them via `rgb(var(--token))`.
+   - `--bg`, `--fg`, `--muted`                 → base text & surfaces
+   - `--card`, `--card-fg`                     → card backgrounds & text
+   - `--border`, `--input`                     → control frames/fields
+   - `--brand`/`--on-brand`, `--accent`/`--on-accent`
+   - `--success`, `--warning`, `--danger`      → status colors
+   - Header bar uses `--header`/`--header-bg`/`--header-fg`.
+
+   Notes:
+   - Values are stored as space-separated RGB (e.g. `83 66 60`) so you can do
+     `background-color: rgb(var(--brand));` and adjust alpha with
+     `rgba(var(--fg)/0.6)`.
+   - `color-scheme: light|dark` is set per theme so native UI (date pickers,
+     form controls) match the theme.
+   - To add a theme:
+       1) Duplicate a block and rename the selector to :root[data-theme='new']
+       2) Fill the tokens, keeping the same variable names
+       3) Set an appropriate `color-scheme`
+
+   Safety:
+   - Keep token names consistent across themes.
+   - Prefer tweaking tokens, not component styles, for theme edits.
+   ========================================================================== */
+
+/* ───────── Default (light/brown) ───────── */
 :root,
 :root[data-theme='brown'] {
   /* base */
@@ -34,7 +63,7 @@
   color-scheme: light;
 }
 
-/* Dark */
+/* ───────── Dark ───────── */
 :root[data-theme='dark'] {
   --bg: 20 20 20; /* #141414 */
   --fg: 245 245 245; /* #F5F5F5 */
@@ -51,20 +80,20 @@
   --border: 102 102 102; /* #666 */
   --input: 59 59 59; /* #3B3B3B */
 
-  --brand: 180 160 150; /* litt lysere i dark */
+  --brand: 180 160 150; /* lighter in dark */
   --on-brand: 20 20 20;
 
   --accent: 166 139 124;
   --on-accent: 20 20 20;
 
-  --success: 34 211 146; /* #22D3EE-ish, kan justeres */
+  --success: 34 211 146; /* #22D3EE-ish*/
   --warning: 250 204 21; /* #FACC15 */
   --danger: 248 113 113; /* #F87171 */
 
   color-scheme: dark;
 }
 
-/* Bonus: Neon (pink-ish) */
+/* ───────── Neon ───────── */
 :root[data-theme='neon'] {
   --bg: 14 14 18;
   --fg: 250 250 252;
@@ -212,7 +241,7 @@
   color-scheme: dark;
 }
 
-/* ---- Force native UI (select, date picker, etc.) to match the theme ---- */
+/* Native UI color-scheme helpers */
 html {
   color-scheme: light;
 } /* default for light themes */

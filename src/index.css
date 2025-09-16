@@ -1,8 +1,25 @@
+/* ==========================================================================
+   index.css – global stylesheet
+   --------------------------------------------------------------------------
+   Purpose
+   - Imports theme tokens and Tailwind layers.
+   - Sets small global resets/tweaks in @layer base.
+   - Defines a handful of shared component classes in @layer components.
+
+   Notes
+   - The 16px input font-size avoids iOS auto-zoom on focus.
+   - `min-width: 0` on form controls prevents overflow in CSS grid/flex.
+   - `Canvas` / `CanvasText` ensure native-looking <select> options across browsers.
+   - `accent-color` ties checkboxes/radios to the active theme brand color.
+   - Utility classes like `.card`, `.field`, `.btn-ghost`, etc. are used across pages.
+   ========================================================================== */
+
 @import '@/styles/themes.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------ Base layer ------------------------------- */
 @layer base {
   /* Prevent iOS zoom + allow fields to shrink in grids */
   input,
@@ -12,6 +29,7 @@
     min-width: 0;
   }
 
+  /* Native select palette so options aren't unreadable in dark mode */
   select option,
   select optgroup {
     color: CanvasText;
@@ -24,28 +42,30 @@
     accent-color: rgb(var(--brand));
   }
 
+  /* Default h1 used in simple pages; component headers can override */
   h1 {
     @apply text-2xl md:text-3xl font-bold text-center mb-4;
   }
 }
 
+/* --------------------------- Components layer ---------------------------- */
 @layer components {
-  /* shared card shell used across the app */
+  /* Shared card shell used across the app */
   .card {
     @apply rounded border border-border bg-card p-4 shadow;
   }
 
-  /* small, quiet button used in cards */
+  /* Small, quiet button used in cards */
   .mini-btn {
     @apply rounded border border-border px-3 py-1 text-sm hover:bg-[rgb(var(--fg))/0.05] whitespace-nowrap;
   }
 
-  /* shared input look (you already use this name in a few places) */
+  /* Legacy/input helper class (kept for consistency) */
   .input-field {
     @apply w-full rounded-md border border-border bg-card text-fg px-3 py-2;
   }
 
-  /* Optional: make card images reserve space and fade in nicely */
+  /* Reserve image space + gentle placeholder for nicer LCP */
   .venue-img {
     display: block;
     width: 100%;
@@ -53,6 +73,7 @@
     background: color-mix(in srgb, rgb(var(--fg)) 6%, transparent);
   }
 
+  /* Single-line inputs */
   .field {
     @apply w-full h-10 min-w-0 rounded-md border border-border bg-card text-fg px-3 text-sm leading-5
            focus:outline-none focus:ring-2 focus:ring-[rgb(var(--fg))/0.1] focus:border-[rgb(var(--fg))/20];
@@ -70,6 +91,7 @@
     @apply rounded-md border border-border bg-transparent px-3 py-2 text-sm hover:bg-[rgb(var(--fg))/0.05];
   }
 
+  /* Subtle text color helpers */
   .text-muted {
     color: rgb(var(--muted));
   }
