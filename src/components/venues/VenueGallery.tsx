@@ -53,12 +53,13 @@ export default function VenueGallery({ venue, priority = false }: Props) {
   const current = normalized[Math.min(active, normalized.length - 1)];
 
   const isCdnPhoto = /images\.(unsplash|pexels)\.com|unsplash\.com|pexels\.com/i.test(current.url);
-  const heroWidths = [480, 640, 768, 960, 1200];
+  const heroWidths = [480, 640, 768, 960, 1024];
   const heroSrcSet = isCdnPhoto
     ? makeSrcSet(current.url, heroWidths, (w) => Math.round(w * HERO_RATIO))
     : undefined;
   const heroSrc = optimizeRemoteImage(current.url, { width: HERO_W, height: HERO_H });
-  const heroSizes = '100vw';
+  const heroSizes = '(min-width: 1024px) 1024px, 100vw';
+
   const heroPriority = priority && active === 0;
 
   return (
