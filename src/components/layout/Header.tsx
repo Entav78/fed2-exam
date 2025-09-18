@@ -146,8 +146,6 @@ export default function Header() {
             <span className="text-[rgb(var(--header-fg))]">Theme</span>
             <ThemeSwitcher variant="header" compact onChanged={() => setMenuOpen(false)} />
           </div>
-
-          <LogoutButton className="underline" />
         </div>
       )}
 
@@ -255,8 +253,6 @@ export default function Header() {
                   <span className="block mb-1">Theme</span>
                   <ThemeSwitcher variant="header" compact onChanged={() => setMenuOpen(false)} />
                 </div>
-
-                <LogoutButton className="underline" />
               </div>
             ) : (
               <div className="text-sm text-[rgb(var(--header-fg))]">
