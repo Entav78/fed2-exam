@@ -20,8 +20,9 @@ function extractApiError(json: unknown, fallback = 'Registration failed') {
 }
 
 /** Venue Managers must use a Noroff student address. */
-function isNoroffStudentEmail(email: string) {
-  return /@stud\.noroff\.no$/i.test(email.trim());
+function isNoroffEmail(email: string) {
+  // allows @stud.noroff.no and @noroff.no
+  return /@(?:stud\.)?noroff\.no$/i.test(email.trim());
 }
 
 export default function RegisterPage() {
@@ -41,12 +42,13 @@ export default function RegisterPage() {
     const nameT = name.trim();
     const emailT = email.trim();
 
-    if (venueManager && !isNoroffStudentEmail(emailT)) {
-      const msg = 'Venue Managers must use a @stud.noroff.no email.';
+    if (venueManager && !isNoroffEmail(email)) {
+      const msg = 'Venue Managers must use a Noroff email (@stud.noroff.no or @noroff.no).';
       setError(msg);
       toast.error(msg);
       return;
     }
+
     if (password !== confirm) {
       const msg = 'Passwords do not match.';
       setError(msg);
@@ -118,7 +120,8 @@ export default function RegisterPage() {
               placeholder="name@stud.noroff.no"
             />
             <p className="mt-1 text-xs text-muted">
-              Venue managers must use a <span className="font-medium">@stud.noroff.no</span> email.
+              Venue managers must use a <span className="font-medium">@stud.noroff.no</span> or{' '}
+              <span className="font-medium">@noroff.no</span> email.
             </p>
           </div>
 
