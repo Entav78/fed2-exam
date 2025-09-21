@@ -134,4 +134,3 @@ Screenshots: `docs/screenshots/wave-*.png`
 
 - Lighthouse HTML: `docs/lighthouse/*`
 - Screenshots (Lighthouse/WAVE/Validator): `docs/screenshots/*`
-- Commit tested: **[`<hash>`](https://github.com/Entav78/fed2-exam/commit/<hash>)**

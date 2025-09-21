@@ -2,14 +2,15 @@
 
 A single‑page application where users can search venues, check availability, and make bookings. Venue managers can create, edit, and delete their venues.
 
-> ### Start here (quick links)
+> ## Start here (quick links)
 >
 > - **Live app:** https://fed2-exam.netlify.app/
+> - **Repository:** https://github.com/Entav78/fed2-exam
 > - **Roadmap / Kanban:** https://github.com/users/Entav78/projects/11/views/1
 > - **Gantt view:** https://github.com/users/Entav78/projects/11/views/4
-> - **Style guide & themes (Figma):** [Open Figma] https://www.figma.com/design/iRcaeQrJ3V5TKl907pfhnc/Holidaze?node-id=0-1&t=eojYcXL8BnztbXTU-1
-> - **Lighthouse screenshots:** [`/docs/lighthouse/screenshots`](./docs/lighthouse/screenshots)
-> - **Test notes & validation:** [`/docs/tests.md`](./docs/tests.md)
+> - **Style guide & themes (Figma):** [Open Figma](https://www.figma.com/design/iRcaeQrJ3V5TKl907pfhnc/Holidaze?node-id=0-1&t=eojYcXL8BnztbXTU-1)
+> - **Lighthouse screenshots:** [/docs/lighthouse/screenshots](./docs/lighthouse/screenshots)
+> - **Test notes & validation:** [/docs/tests.md](./docs/tests.md)
 
 ---
 
@@ -36,6 +37,8 @@ A single‑page application where users can search venues, check availability, a
 ---
 
 ## Getting Started
+
+**Requirements:** Node 18+ and npm 9+
 
 ```bash
 # 1) Install deps

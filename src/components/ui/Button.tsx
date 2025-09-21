@@ -99,7 +99,7 @@ export function Button({
           aria-hidden
         />
       )}
-      <span>{isLoading ? 'Loading…' : children}</span>
+      <span aria-live="polite">{isLoading ? 'Loading…' : children}</span>
     </button>
   );
 }

@@ -82,30 +82,47 @@ export default function VenueFilters({
   return (
     <div className="grid gap-3 rounded border border-border bg-card p-3 md:grid-cols-4">
       {/* Search */}
+      <label htmlFor="filters-q" className="sr-only">
+        Search venues
+      </label>
       <input
+        id="filters-q"
+        type="search"
         className="field md:col-span-2"
         placeholder="Search venues…"
         value={value.q}
         onChange={onText('q')}
+        aria-label="Search venues"
       />
 
       {/* Price min / max */}
       <div className="flex gap-2">
+        <label htmlFor="filters-min" className="sr-only">
+          Minimum price
+        </label>
         <input
+          id="filters-min"
           className="field"
           placeholder="Min price"
           inputMode="numeric"
           pattern="[0-9]*"
           value={value.minPrice ?? ''}
           onChange={onText('minPrice')}
+          aria-label="Minimum price"
         />
+
+        <label htmlFor="filters-max" className="sr-only">
+          Maximum price
+        </label>
         <input
+          id="filters-max"
           className="field"
           placeholder="Max price"
           inputMode="numeric"
           pattern="[0-9]*"
           value={value.maxPrice ?? ''}
           onChange={onText('maxPrice')}
+          aria-label="Maximum price"
         />
       </div>
 

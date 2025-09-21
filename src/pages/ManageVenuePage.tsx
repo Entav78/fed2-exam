@@ -399,6 +399,7 @@ export default function ManageVenuePage() {
                   placeholder="Image URL (https://...)"
                   value={img.url}
                   onChange={onImageField(i, 'url')}
+                  aria-label="Image URL"
                 />
                 <div className="flex gap-2">
                   <input
@@ -406,6 +407,7 @@ export default function ManageVenuePage() {
                     placeholder="Alt text"
                     value={img.alt}
                     onChange={onImageField(i, 'alt')}
+                    aria-label="Alt text"
                   />
                   <Button
                     type="button"
@@ -462,25 +464,35 @@ export default function ManageVenuePage() {
               placeholder="Address"
               value={form.address}
               onChange={onField('address')}
+              aria-label="Address"
             />
             <input
               className="field"
               placeholder="City"
               value={form.city}
               onChange={onField('city')}
+              aria-label="City"
             />
-            <input className="field" placeholder="ZIP" value={form.zip} onChange={onField('zip')} />
+            <input
+              className="field"
+              placeholder="ZIP"
+              value={form.zip}
+              onChange={onField('zip')}
+              aria-label="ZIP code"
+            />
             <input
               className="field"
               placeholder="Country"
               value={form.country}
               onChange={onField('country')}
+              aria-label="Country"
             />
             <input
               className="field"
               placeholder="Continent"
               value={form.continent}
               onChange={onField('continent')}
+              aria-label="Continent"
             />
             <input
               id="lat"
@@ -491,6 +503,7 @@ export default function ManageVenuePage() {
               placeholder="Lat"
               value={form.lat}
               onChange={onField('lat')}
+              aria-label="Latitude"
             />
             <input
               id="lng"
@@ -501,6 +514,7 @@ export default function ManageVenuePage() {
               placeholder="Lng"
               value={form.lng}
               onChange={onField('lng')}
+              aria-label="Longitude"
             />
           </div>
         </details>
