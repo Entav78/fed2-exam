@@ -55,16 +55,21 @@ export default function Header() {
             <NavLink to="/" className={link}>
               Home
             </NavLink>
-            <NavLink to="/profile" className={link}>
-              Profile
-            </NavLink>
-            <NavLink to="/bookings" className={link}>
-              My bookings
-            </NavLink>
-            {isManager && (
-              <NavLink to="/manage" className={link}>
-                Manage venues
-              </NavLink>
+
+            {isLoggedIn && (
+              <>
+                <NavLink to="/profile" className={link}>
+                  Profile
+                </NavLink>
+                <NavLink to="/bookings" className={link}>
+                  My bookings
+                </NavLink>
+                {isManager && (
+                  <NavLink to="/manage" className={link}>
+                    Manage venues
+                  </NavLink>
+                )}
+              </>
             )}
           </nav>
 
@@ -132,22 +137,22 @@ export default function Header() {
         </button>
       </div>
 
-      {/* Desktop "logged in as" row */}
-      {isLoggedIn && displayName && (
-        <div className="container mt-1 hidden sm:flex items-center justify-end gap-3 text-sm text-[rgb(var(--header-fg))]">
+      {/* Desktop info row: right-aligned. Shows Theme always; "Logged in as" only when logged in */}
+      <div className="container mt-1 hidden sm:flex items-center justify-end gap-3 text-sm text-[rgb(var(--header-fg))]">
+        {isLoggedIn && displayName && (
           <span>
             Logged in as <span className="font-semibold">{displayName}</span>
             <span className="ml-2 text-[rgb(var(--header-fg))/0.95]">
               ({isManager ? 'Manager' : 'Customer'})
             </span>
           </span>
+        )}
 
-          <div className="flex items-center gap-2">
-            <span className="text-[rgb(var(--header-fg))]">Theme</span>
-            <ThemeSwitcher variant="header" compact onChanged={() => setMenuOpen(false)} />
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[rgb(var(--header-fg))]">Theme</span>
+          <ThemeSwitcher variant="header" compact onChanged={() => setMenuOpen(false)} />
         </div>
-      )}
+      </div>
 
       {/* Separator */}
       <div className="hidden sm:block">
