@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 
 import LogoutButton from '@/components/auth/LogoutButton';
+import MobileMenuPortal from '@/components/layout/MobileMenuPortal';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import { useAuthStore } from '@/store/authStore';
 
@@ -94,7 +95,7 @@ export default function Header() {
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
-          aria-controls="mobile-menu"
+          aria-haspopup="dialog"
         >
           {/* open icon */}
           <svg
@@ -160,30 +161,25 @@ export default function Header() {
         <div className="h-px bg-[rgb(var(--header-fg))/12]" />
       </div>
 
-      {/* Mobile drawer */}
-      <div
-        id="mobile-menu"
-        className={`fixed right-0 top-0 z-50 h-full w-full transform
-              bg-[rgb(var(--header-bg))] text-[rgb(var(--header-fg))]
-              shadow-lg transition-transform duration-300 sm:hidden
-              ${menuOpen ? 'translate-x-0' : 'translate-x-full'}`}
-      >
+      <MobileMenuPortal open={menuOpen} onClose={() => setMenuOpen(false)}>
+        {/* header row inside the drawer */}
         <div className="flex items-center justify-between border-b border-[rgb(var(--header-fg))/30] px-4 pb-4 pt-6">
-          <span className="text-lg font-semibold">Menu</span>
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu">
-              <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
+          <h2 id="mobile-menu-title" className="text-lg font-semibold">
+            Menu
+          </h2>
+          <button type="button" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+            <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
 
+        {/* your existing list, unchanged */}
         <ul className="flex flex-col gap-4 p-4">
           <li>
             <NavLink to="/" onClick={() => setMenuOpen(false)} className={menuLink}>
@@ -245,29 +241,13 @@ export default function Header() {
           />
 
           <li>
-            {isLoggedIn ? (
-              <div className="space-y-3 text-sm text-[rgb(var(--header-fg))]">
-                <div>
-                  Logged in as <strong>{displayName}</strong>
-                  {isManager && (
-                    <span className="ml-2 text-[rgb(var(--header-fg))/0.95]">(Manager)</span>
-                  )}
-                </div>
-
-                <div>
-                  <span className="block mb-1">Theme</span>
-                  <ThemeSwitcher variant="header" compact onChanged={() => setMenuOpen(false)} />
-                </div>
-              </div>
-            ) : (
-              <div className="text-sm text-[rgb(var(--header-fg))]">
-                <span className="block mb-1">Theme</span>
-                <ThemeSwitcher variant="header" compact onChanged={() => setMenuOpen(false)} />
-              </div>
-            )}
+            <div className="text-sm text-[rgb(var(--header-fg))]">
+              <span className="block mb-1">Theme</span>
+              <ThemeSwitcher variant="header" compact onChanged={() => setMenuOpen(false)} />
+            </div>
           </li>
         </ul>
-      </div>
+      </MobileMenuPortal>
     </header>
   );
 }
