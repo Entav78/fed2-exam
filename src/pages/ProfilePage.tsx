@@ -1,5 +1,3 @@
-// src/pages/ProfilePage.tsx
-
 /** @file ProfilePage – user profile with banner/avatar editor, lazy-loaded
  *  “My bookings” and (for managers) “My venues”. Also preloads the banner to
  *  help LCP on this route.

@@ -11,14 +11,40 @@ import { useAuthStore } from '@/store/authStore';
 import NewVenueTile from '../venues/NewVenueTile';
 
 /**
+ * Derive upcoming/active bookings from a venue's bookings array.
+ *
+ * - Treats "today" as inclusive (bookings ending today still count).
+ * - Returns the list sorted by `dateFrom` ascending so index 0 is the next one.
+ *
+ * @param bookings  Raw venue bookings (`dateFrom`/`dateTo` ISO strings).
+ * @param from      Reference date (defaults to now).
+ * @returns         Sorted array of bookings that are active or in the future.
+ */
+function getUpcoming(
+  bookings: { dateFrom: string; dateTo: string }[] = [],
+  from: Date = new Date(),
+) {
+  const startOfToday = new Date(from);
+  startOfToday.setHours(0, 0, 0, 0); // treat “today” as inclusive
+
+  return bookings
+    .filter((b) => Date.parse(b.dateTo) >= +startOfToday) // active or future
+    .sort((a, b) => Date.parse(a.dateFrom) - Date.parse(b.dateFrom));
+}
+
+/**
  * MyVenuesList
  *
- * Loads venues owned by the current user (with bookings for context),
- * renders a compact row list, and toggles between a limited preview and all items.
+ * Loads venues owned by the current user (including `_bookings=true` for context),
+ * renders a compact row list, and lets the user toggle between a limited preview
+ * and the full set.
  *
- * Perf:
- *  - While loading, renders a skeleton list that approximates the final card height
- *    so the layout remains stable (no CLS) when data arrives.
+ * UI details:
+ * - Each venue shows a small "N upcoming" badge plus the next booking range when present.
+ * - A "Show all / Show fewer" control expands/collapses the list.
+ *
+ * Performance:
+ * - While loading, a skeleton list matches the final card footprint to avoid CLS.
  */
 export default function MyVenuesList() {
   const user = useAuthStore((s) => s.user);
@@ -98,11 +124,31 @@ export default function MyVenuesList() {
   return (
     <>
       <ul id={listId} className="grid gap-4 xl:grid-cols-2 auto-rows-fr list-none p-0 m-0">
-        {visible.map((v) => (
-          <li key={v.id}>
-            <VenueCard venue={v} layout="row" showManage className="min-h-[112px]" />
-          </li>
-        ))}
+        {visible.map((v) => {
+          const upcoming = getUpcoming(v.bookings ?? []);
+          const next = upcoming[0];
+
+          return (
+            <li key={v.id}>
+              <VenueCard venue={v} layout="row" showManage className="min-h-[112px]" />
+
+              {upcoming.length > 0 && (
+                <div className="mt-1 text-xs text-muted flex items-center gap-2">
+                  <span className="rounded-full bg-success/10 text-success px-2 py-0.5">
+                    {upcoming.length} upcoming
+                  </span>
+                  {next && (
+                    <span>
+                      Next: {new Date(next.dateFrom).toLocaleDateString()} →{' '}
+                      {new Date(next.dateTo).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              )}
+            </li>
+          );
+        })}
+
         <li>
           <NewVenueTile className="min-h-[112px]" />
         </li>
