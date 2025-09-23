@@ -1,4 +1,17 @@
-/** @file Header – sticky responsive site header with primary nav and auth controls. */
+/**
+ * @file Header – sticky responsive site header with primary nav and auth controls.
+ *
+ * Responsibilities
+ * - Desktop: brand + primary nav + auth actions on a single row. A second row shows
+ *   Theme (always) and “Logged in as …” when authenticated.
+ * - Mobile: hamburger toggles a full-screen drawer rendered via `MobileMenuPortal`.
+ * - While the mobile menu is open, body scrolling is locked.
+ *
+ * Accessibility
+ * - The hamburger button exposes `aria-expanded` and `aria-haspopup="dialog"`.
+ * - The mobile drawer itself is a `role="dialog"` (handled inside `MobileMenuPortal`).
+ * - The close button in the drawer has an explicit `aria-label`.
+ */
 
 import { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
@@ -9,21 +22,27 @@ import ThemeSwitcher from '@/components/ThemeSwitcher';
 import { useAuthStore } from '@/store/authStore';
 
 /**
- * Utility to style a NavLink based on its active state.
- * NavLink also handles `aria-current="page"` automatically.
+ * Returns class names for a `NavLink` based on its active state.
+ * `NavLink` will also set `aria-current="page"` when active.
+ *
+ * @param {{ isActive: boolean }} params React Router provides `isActive` to the className callback.
+ * @returns {string} Tailwind utility classes for the link.
  */
 const link = ({ isActive }: { isActive: boolean }) =>
   `px-2 py-1 rounded ${isActive ? 'underline' : 'hover:underline'}`;
 
 /**
- * Header
+ * Header component.
  *
+ * UI structure:
  * - Left: brand link
  * - Right (desktop): primary nav + auth actions
- * - Mobile: hamburger toggles a full-screen drawer
+ * - Mobile: hamburger that opens a full-screen drawer (via `MobileMenuPortal`)
  *
- * Behavior:
- * - Locks body scroll when the mobile menu is open.
+ * Side effects:
+ * - Adds/removes `overflow-hidden` on `<body>` while the mobile menu is open.
+ *
+ * @returns {JSX.Element} Sticky site header.
  */
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -41,6 +60,7 @@ export default function Header() {
     return () => document.body.classList.remove('overflow-hidden');
   }, [menuOpen]);
 
+  /** Shared className for items in the mobile drawer. */
   const menuLink = 'block w-full text-left px-4 py-2 hover:underline transition';
 
   return (
@@ -179,7 +199,7 @@ export default function Header() {
           </button>
         </div>
 
-        {/* your existing list, unchanged */}
+        {/* the list */}
         <ul className="flex flex-col gap-4 p-4">
           <li>
             <NavLink to="/" onClick={() => setMenuOpen(false)} className={menuLink}>
