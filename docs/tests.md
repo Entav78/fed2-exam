@@ -55,9 +55,9 @@ Full reports saved in `docs/lighthouse/`. Preview PNGs in `docs/lighthouse/scree
 ### Desktop (example)
 | Page         | Perf | A11y | BP | SEO |
 |--------------|-----:|-----:|---:|----:|
-| Home         | 100  | 100  | 100| 92 |
-| Venue detail | 100  | 100  | 100| 92 |
-| Profile      | 100  | 100  | 100| 92 |
+| Home         | 100  | 100  | 100| 91-92 |
+| Venue detail | 98-100  | 100  | 100| 91-92 |
+| Profile      | 98-100  | 100  | 100| 91-92 |
 | Manage       | 100  | 100  | 100|# ✅ Testing & Validation Report
 
 **Project:** Holidaze  
