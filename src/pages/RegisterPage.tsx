@@ -120,7 +120,7 @@ export default function RegisterPage() {
               placeholder="name@stud.noroff.no"
             />
             <p className="mt-1 text-xs text-muted">
-              Venue managers must use a <span className="font-medium">@stud.noroff.no</span> or{' '}
+              You must use a <span className="font-medium">@stud.noroff.no</span> or{' '}
               <span className="font-medium">@noroff.no</span> email.
             </p>
           </div>
