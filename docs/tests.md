@@ -102,7 +102,7 @@ Date: 2025-09-23
 - **Login / Register** — ✅  
 - **Profile / Manage** — ✅  
 
-_Key fixes:_ added missing labels, removed legacy self-closing slashes on void elements.
+_Key fixes:_ added missing labels.
 
 ---
 
